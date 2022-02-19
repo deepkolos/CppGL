@@ -8,6 +8,8 @@
 #include "rttr/registration.h"
 #include "rttr/registration_friend.h"
 #include <_types/_uint8_t.h>
+#include <iostream>
+#include <map>
 #include <rttr/registration>
 #include <rttr/type>
 
@@ -20,57 +22,70 @@
 using namespace CppGL;
 using namespace rttr;
 
-struct VertexShaderSource : ShaderSource {
-  [[attribute]] vec4 position;
-  [[attribute]] vec4 color;
-  [[varying]] vec4 v_color;
+static struct VertexShaderSource : ShaderSource {
+  attribute vec4 position;
+  attribute vec4 color;
+  varying vec4 v_color;
   void main() {
+    std::cout << "vert:" << position << std::endl;
+    std::cout << "vert:" << color << std::endl;
+
     gl_Position = position;
     v_color = color;
   }
 } vertexShaderSource;
 
-struct FragmentShaderSource : ShaderSource {
-  [[varying]] vec4 v_color;
-  void main() { gl_FragColor = v_color; }
+static struct FragmentShaderSource : ShaderSource {
+  varying vec4 v_color;
+  void main() {
+    std::cout << "frag:" << v_color << std::endl;
+    gl_FragColor = v_color;
+  }
 } fragmentShaderSource;
 
 MY_RTTR_REGISTRATION {
   using S = VertexShaderSource;
   using M = ShaderSourceMeta;
+  auto P = policy::prop::bind_as_ptr;
   registration::class_<S>("VertexShaderSource")
-      .property("position", &S::position)(metadata("attr", M::attribute))
-      .property("color", &S::color)(metadata("attr", M::attribute))
-      .property("v_color", &S::v_color)(metadata("attr", M::varying))
+      .property("position", &S::position)(metadata(0, M::Attribute),
+                                          metadata(1, sizeof(S::position)), P)
+      .property("color", &S::color)(metadata(0, M::Attribute),
+                                    metadata(1, sizeof(S::color)), P)
+      .property("v_color", &S::v_color)(metadata(0, M::Varying),
+                                        metadata(1, sizeof(S::v_color)), P)
       .method("main", &S::main);
 }
 
 MY_RTTR_REGISTRATION {
   using S = FragmentShaderSource;
   using M = ShaderSourceMeta;
+  auto P = policy::prop::bind_as_ptr;
   registration::class_<S>("FragmentShaderSource")
-      .property("v_color", &S::v_color)(metadata("attr", M::varying))
+      .property("v_color", &S::v_color)(metadata(0, M::Varying),
+                                        metadata(1, sizeof(S::v_color)), P)
       .method("main", &S::main);
 }
 
 int main(void) {
   auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShader, vertexShaderSource);
+  glShaderSource(vertexShader, &vertexShaderSource);
   glCompileShader(vertexShader);
 
   auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShader, fragmentShaderSource);
+  glShaderSource(fragmentShader, &fragmentShaderSource);
   glCompileShader(fragmentShader);
 
   auto program = glCreateProgram();
   glAttachShader(program, vertexShader);
   glAttachShader(program, fragmentShader);
-  glLinkProgram(program);
+  glLinkProgram<VertexShaderSource, FragmentShaderSource>(program);
 
   auto positionLoc = glGetAttribLocation(program, "position");
   auto colorLoc = glGetAttribLocation(program, "color");
 
-  static float vertexPositions[] = {0, 0.7, 0.5, -0.7, -0.5, -0.7};
+  static float vertexPositions[] = {0, 0.7, 0,    1,    0.5, -0.7,
+                                    0, 1,   -0.5, -0.7, 0,   1};
   static uint8_t vertexColors[] = {255, 0,   0, 255, 0,   255,
                                    0,   255, 0, 0,   255, 255};
 
@@ -88,7 +103,7 @@ int main(void) {
   glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
 
   glVertexAttribPointer(positionLoc,
-                        2,        // 2 values per vertex shader iteration
+                        4,        // 2 values per vertex shader iteration
                         GL_FLOAT, // data is 32bit floats
                         GL_FALSE, // don't normalize
                         0,        // stride (0 = auto)
@@ -106,5 +121,5 @@ int main(void) {
   );
 
   glUseProgram(program);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays<VertexShaderSource, FragmentShaderSource>(GL_TRIANGLES, 0, 3);
 }

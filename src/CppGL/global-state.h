@@ -1,9 +1,9 @@
 #pragma once
 
 #include "buffer.h"
+#include "data-type.h"
 #include "math.h"
 #include "texture.h"
-#include "data-type.h"
 #include <vector>
 
 namespace CppGL {
@@ -13,7 +13,7 @@ struct VertexArray;
 
 struct GlobalState {
   // common state
-  vec4 VIEWPORT;
+  vec4 VIEWPORT{0, 0, 3, 3};
   Buffer *ARRAY_BUFFER_BINDING = nullptr;
   Program *CURRENT_PROGRAM = nullptr;
   VertexArray *VERTEX_ARRAY_BINDING = nullptr;

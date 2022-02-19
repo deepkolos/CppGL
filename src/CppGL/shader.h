@@ -6,15 +6,20 @@
 #include <string>
 #include <vector>
 
+#define attribute [[attribute]]
+#define uniform [[uniform]]
+#define varying [[varying]]
+#define discard return DISCARD()
+
 namespace CppGL {
+
 struct Program;
-// typedef std::function<void(const Program &)> ShaderSource;
 
 struct ShaderMeta {
   enum ShaderMetaType {
-    attribute,
-    uniform,
-    varying,
+    Attribute,
+    Uniform,
+    Varying,
   } type;
 
   union {
@@ -26,9 +31,14 @@ struct ShaderMeta {
   };
 };
 
+typedef int sample2D;
+
 struct ShaderSource {
   vec4 gl_Position;
   vec4 gl_FragColor;
+  bool _discarded = false;
+  void DISCARD() { _discarded = true; }
+  vec4 texture2D(sample2D textureUint, vec2 uv) { return {}; }
 };
 
 struct Shader {
@@ -40,7 +50,7 @@ struct Shader {
   Shader(Type type) : type(type) {}
 
   Type type;
-  ShaderSource source;
+  ShaderSource *source;
   bool COMPILE_STATUS = false;
 };
 } // namespace CppGL

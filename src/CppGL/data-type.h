@@ -9,6 +9,6 @@ enum StencilFunc {};
 enum StencilAction { KEEP };
 enum CullFaceMode { BACK };
 enum FrontFace { CCW };
-enum ShaderSourceMeta { attribute, uniform, varying };
+enum ShaderSourceMeta { Attribute, Uniform, Varying };
 
 } // namespace CppGL
