@@ -37,6 +37,8 @@ static struct VertexShaderSource : ShaderSource {
     gl_Position = position;
     v_color = color;
   }
+
+  RTTR_ENABLE(ShaderSource)
 } vertexShaderSource;
 
 static struct FragmentShaderSource : ShaderSource {
@@ -45,8 +47,9 @@ static struct FragmentShaderSource : ShaderSource {
     // std::cout << "frag:" << v_color << std::endl;
     gl_FragColor = v_color;
   }
-} fragmentShaderSource;
 
+  RTTR_ENABLE(ShaderSource)
+} fragmentShaderSource;
 
 #undef attribute
 #undef uniform
@@ -89,14 +92,13 @@ int main(void) {
   auto program = glCreateProgram();
   glAttachShader(program, vertexShader);
   glAttachShader(program, fragmentShader);
-  glLinkProgram<VertexShaderSource, FragmentShaderSource>(program);
+  glLinkProgram(program);
 
   auto positionLoc = glGetAttribLocation(program, "position");
   auto colorLoc = glGetAttribLocation(program, "color");
 
-  static float vertexPositions[] = {0, 0.7, 0,    1,
-                                    0.5, -0.7, 0, 1,   
-                                    -.5, -0.7, 0,1};
+  static float vertexPositions[] = {0, 0.7, 0,   1,    0.5, -0.7,
+                                    0, 1,   -.5, -0.7, 0,   1};
   static uint8_t vertexColors[] = {255, 0,   0, 255, 0,   255,
                                    0,   255, 0, 0,   255, 255};
 
@@ -132,5 +134,5 @@ int main(void) {
   );
 
   glUseProgram(program);
-  glDrawArrays<VertexShaderSource, FragmentShaderSource>(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
 }

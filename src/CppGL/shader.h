@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <rttr/registration>
 
 namespace CppGL {
 
@@ -34,6 +35,7 @@ struct ShaderSource {
   bool _discarded = false;
   void DISCARD() { _discarded = true; }
   vec4 texture2D(sample2D textureUint, vec2 uv) { return {}; }
+  RTTR_ENABLE()
 };
 
 struct Shader {

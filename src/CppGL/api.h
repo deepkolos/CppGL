@@ -39,7 +39,7 @@ inline void glAttachShader(Program *program, Shader *shader) {
   else if (shader->type == Shader::FRAGMENT_SHADER)
     program->fragmentShader = shader;
 }
-template <class T, class N> inline void glLinkProgram(Program *program) {
+inline void glLinkProgram(Program *program) {
   // 收集shader上的attribute uniform varying 信息到program里
   int attributeIndex = 0;
   int uniformIndex = 0;
@@ -63,10 +63,8 @@ template <class T, class N> inline void glLinkProgram(Program *program) {
     }
   };
 
-  processTypeInfo(
-      rttr::type::get(*reinterpret_cast<T *>(program->vertexShader->source)));
-  processTypeInfo(
-      rttr::type::get(*reinterpret_cast<N *>(program->fragmentShader->source)));
+  processTypeInfo(program->vertexShader->source->get_derived_info().m_type);
+  processTypeInfo(program->fragmentShader->source->get_derived_info().m_type);
 }
 inline void glDetachShader(Program *program, Shader *shader) {}
 inline void glUseProgram(Program *program) {
@@ -114,14 +112,13 @@ inline int glGetUniformLocation(Program *program, str name) {
   return dataInfo.location;
 }
 
-template <class T, class N>
 inline void glDrawArrays(int mode, int first, int count) {
   auto program = GLOBAL_STATE.CURRENT_PROGRAM;
   auto vao = GLOBAL_STATE.VERTEX_ARRAY_BINDING;
-  auto vertexShader = reinterpret_cast<T *>(program->vertexShader->source);
-  auto fragmentShader = reinterpret_cast<N *>(program->fragmentShader->source);
-  auto vertexTypeInfo = rttr::type::get(*vertexShader);
-  auto fragmentTypeInfo = rttr::type::get(*fragmentShader);
+  auto vertexShader = program->vertexShader->source;
+  auto fragmentShader = program->fragmentShader->source;
+  auto vertexTypeInfo = vertexShader->get_derived_info().m_type;
+  auto fragmentTypeInfo = fragmentShader->get_derived_info().m_type;
   const auto &viewport = GLOBAL_STATE.VIEWPORT;
   const auto width = viewport.z;
   const auto height = viewport.w;
@@ -140,9 +137,9 @@ inline void glDrawArrays(int mode, int first, int count) {
   int varyingSizeSum = 0;
   std::map<str, int> varyingOffsetMap;
   for (auto &prop : vertexTypeInfo.get_properties())
-    if (prop.get_metadata(0).template get_value<ShaderSourceMeta>() ==
+    if (prop.get_metadata(0).get_value<ShaderSourceMeta>() ==
         ShaderSourceMeta::Varying) {
-      auto size = prop.get_metadata(1).template get_value<size_t>();
+      auto size = prop.get_metadata(1).get_value<size_t>();
       varyingOffsetMap[prop.get_name()] = varyingSizeSum;
       varyingSizeSum += size;
       varyingNum++;
@@ -189,7 +186,7 @@ inline void glDrawArrays(int mode, int first, int count) {
       // 写入attribute到shader的变量
       auto prop = vertexTypeInfo.get_property(name);
       auto var = prop.get_value(*vertexShader);
-      auto varPtr = var.template get_value<float *>();
+      auto varPtr = var.get_value<float *>();
 
       if (info.type == GL_UNSIGNED_BYTE && info.normalized) {
         for (int j = 0; j < info.size; j++) {
@@ -212,11 +209,11 @@ inline void glDrawArrays(int mode, int first, int count) {
     // 收集varying
     size_t offset = 0;
     for (auto &prop : vertexTypeInfo.get_properties()) {
-      if (prop.get_metadata(0).template get_value<ShaderSourceMeta>() ==
+      if (prop.get_metadata(0).get_value<ShaderSourceMeta>() ==
           ShaderSourceMeta::Varying) {
-        auto src = prop.get_value(*vertexShader).template get_value<char *>();
+        auto src = prop.get_value(*vertexShader).get_value<char *>();
         auto dst = varyingMem + (i * varyingSizeSum) + offset;
-        auto size = prop.get_metadata(1).template get_value<size_t>();
+        auto size = prop.get_metadata(1).get_value<size_t>();
         memcpy(dst, src, size);
         offset += size;
       }
@@ -282,12 +279,12 @@ inline void glDrawArrays(int mode, int first, int count) {
           }
           // 设置到varying
           for (auto &prop : fragmentTypeInfo.get_properties())
-            if (prop.get_metadata(0).template get_value<ShaderSourceMeta>() ==
+            if (prop.get_metadata(0).get_value<ShaderSourceMeta>() ==
                 ShaderSourceMeta::Varying) {
               auto var = prop.get_value(*fragmentShader);
-              auto varPtr = var.template get_value<float *>();
+              auto varPtr = var.get_value<float *>();
               auto search = varyingOffsetMap.find(prop.get_name());
-              auto size = prop.get_metadata(1).template get_value<size_t>();
+              auto size = prop.get_metadata(1).get_value<size_t>();
 
               if (search != varyingOffsetMap.end()) {
                 char *dst = reinterpret_cast<char *>(varyingLerpedMem);
