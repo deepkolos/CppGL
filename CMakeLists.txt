@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(tiny-gltf-render CXX)
+project(CppGL CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-Wno-unknown-attributes)
