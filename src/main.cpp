@@ -22,6 +22,10 @@
 using namespace CppGL;
 using namespace rttr;
 
+#define attribute [[attribute]]
+#define uniform [[uniform]]
+#define varying [[varying]]
+#define discard return DISCARD()
 static struct VertexShaderSource : ShaderSource {
   attribute vec4 position;
   attribute vec4 color;
@@ -38,10 +42,16 @@ static struct VertexShaderSource : ShaderSource {
 static struct FragmentShaderSource : ShaderSource {
   varying vec4 v_color;
   void main() {
-    std::cout << "frag:" << v_color << std::endl;
+    // std::cout << "frag:" << v_color << std::endl;
     gl_FragColor = v_color;
   }
 } fragmentShaderSource;
+
+
+#undef attribute
+#undef uniform
+#undef varying
+#undef discard
 
 MY_RTTR_REGISTRATION {
   using S = VertexShaderSource;
@@ -84,8 +94,9 @@ int main(void) {
   auto positionLoc = glGetAttribLocation(program, "position");
   auto colorLoc = glGetAttribLocation(program, "color");
 
-  static float vertexPositions[] = {0, 0.7, 0,    1,    0.5, -0.7,
-                                    0, 1,   -0.5, -0.7, 0,   1};
+  static float vertexPositions[] = {0, 0.7, 0,    1,
+                                    0.5, -0.7, 0, 1,   
+                                    -.5, -0.7, 0,1};
   static uint8_t vertexColors[] = {255, 0,   0, 255, 0,   255,
                                    0,   255, 0, 0,   255, 255};
 

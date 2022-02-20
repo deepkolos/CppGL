@@ -13,7 +13,7 @@ struct VertexArray;
 
 struct GlobalState {
   // common state
-  vec4 VIEWPORT{0, 0, 3, 3};
+  vec4 VIEWPORT{0, 0, 300, 150};
   Buffer *ARRAY_BUFFER_BINDING = nullptr;
   Program *CURRENT_PROGRAM = nullptr;
   VertexArray *VERTEX_ARRAY_BINDING = nullptr;

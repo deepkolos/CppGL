@@ -19,6 +19,8 @@
 #include <limits>
 #include <malloc/_malloc.h>
 #include <map>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <rttr/type>
 #include <utility>
 #include <vector>
@@ -120,7 +122,9 @@ inline void glDrawArrays(int mode, int first, int count) {
   auto fragmentShader = reinterpret_cast<N *>(program->fragmentShader->source);
   auto vertexTypeInfo = rttr::type::get(*vertexShader);
   auto fragmentTypeInfo = rttr::type::get(*fragmentShader);
-  auto &viewport = GLOBAL_STATE.VIEWPORT;
+  const auto &viewport = GLOBAL_STATE.VIEWPORT;
+  const auto width = viewport.z;
+  const auto height = viewport.w;
   std::vector<vec4> clipSpaceVertices(count);
 
   if (vao == nullptr)
@@ -149,8 +153,8 @@ inline void glDrawArrays(int mode, int first, int count) {
   /**
    * @brief 分配frameBuffer zBuffer
    */
-  std::vector<vec4> frameBuffer(viewport.z * viewport.w, {0, 0, 0, 0});
-  std::vector<float> zBuffer(viewport.z * viewport.w,
+  std::vector<vec4> frameBuffer(width * height, {0, 0, 0, 0});
+  std::vector<float> zBuffer(width * height,
                              -std::numeric_limits<float>::max());
 
   /**
@@ -219,7 +223,7 @@ inline void glDrawArrays(int mode, int first, int count) {
     }
   }
 
-  auto viewportMatrix = getViewportMatrix(GLOBAL_STATE.VIEWPORT);
+  auto viewportMatrix = getViewportMatrix(viewport);
 
   if (mode == GL_TRIANGLES) {
     for (int vertexIndex = 0; vertexIndex < count; vertexIndex += 3) {
@@ -243,28 +247,32 @@ inline void glDrawArrays(int mode, int first, int count) {
       /**
        * @brief 寻找三角形bounding box
        */
-      box2 boundingBox =
-          triangleViewport.viewportBoundingBox(GLOBAL_STATE.VIEWPORT);
+      box2 boundingBox = triangleProjDiv.viewportBoundingBox(viewport);
+      // box2 boundingBox = {{0, 0}, {width, height}};
       /**
        * @brief 光栅化rasterization
        */
-      for (int x = (int)boundingBox.min.x; x < (int)boundingBox.max.y; x++) {
+#pragma omp parallel for
+      for (int x = (int)boundingBox.min.x; x < (int)boundingBox.max.x; x++) {
         for (int y = (int)boundingBox.min.y; y < (int)boundingBox.max.y; y++) {
-          int bufferIndex = x + y * viewport.z;
-          vec2 positionViewport{(float)x, (float)y};
+          int bufferIndex = x + y * width;
+          vec2 positionViewport{(float)x + 0.5f, (float)y + 0.5f};
           vec3 bcScreen = triangleProjDiv.getBarycentric(positionViewport);
           vec3 bcClip = bcScreen / triangleClipVecW;
 
           // 这里还是不懂
           bcClip = bcClip / (bcClip.x + bcClip.y + bcClip.z);
 
+          // 不在三角形内
+          if (bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0)
+            continue;
+          // if (!triangleViewport.contains(positionViewport))
+          //   continue;
           // 插值得到深度
           float positionDepth = triangleClipVecZ.lerpBarycentric(bcClip);
           float zBufferDepth = zBuffer[bufferIndex];
-
-          // 不在三角形内或者深度大于已绘制的
-          if (bcScreen.x < 0 || bcScreen.y < 0 || bcScreen.z < 0 ||
-              zBufferDepth > positionDepth)
+          // 或者深度大于已绘制的
+          if (zBufferDepth > positionDepth)
             continue;
 
           // 插值varying(内存区块按照float插值)
@@ -301,6 +309,30 @@ inline void glDrawArrays(int mode, int first, int count) {
       }
     }
   }
+
+  using namespace cv;
+  Mat image = Mat::zeros(height, width, CV_8UC3);
+  Mat imageZ = Mat::zeros(height, width, CV_8UC3);
+
+#pragma omp parallel for
+  for (int x = 0; x < (int)width; x++)
+    for (int y = 0; y < (int)height; y++) {
+      int bufferIndex = x + y * width;
+      vec4 &pixel = frameBuffer[bufferIndex];
+      float &depth = zBuffer[bufferIndex];
+      int pixelIndex = (x + (height - y) * width) * 3;
+      image.data[pixelIndex] = (uchar)(pixel.x * 255);
+      image.data[pixelIndex + 1] = (uchar)(pixel.y * 255);
+      image.data[pixelIndex + 2] = (uchar)(pixel.z * 255);
+
+      imageZ.data[pixelIndex] = (uchar)(depth * 255);
+      imageZ.data[pixelIndex + 1] = (uchar)(depth * 255);
+      imageZ.data[pixelIndex + 2] = (uchar)(depth * 255);
+    }
+
+  imshow("zBuffer", imageZ);
+  imshow("frameBuffer", image);
+  waitKey(0);
 
   delete varyingMem;
   delete varyingLerpedMem;

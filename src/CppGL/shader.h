@@ -6,11 +6,6 @@
 #include <string>
 #include <vector>
 
-#define attribute [[attribute]]
-#define uniform [[uniform]]
-#define varying [[varying]]
-#define discard return DISCARD()
-
 namespace CppGL {
 
 struct Program;

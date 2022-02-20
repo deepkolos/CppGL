@@ -125,6 +125,12 @@ struct mat4 {
   };
 
   inline mat4() {}
+  inline mat4(float m0, float m1, float m2, float m3, float m4, float m5,
+              float m6, float m7, float m8, float m9, float m10, float m11,
+              float m12, float m13, float m14, float m15)
+      : m0(m0), m1(m4), m2(m8), m3(m12), m4(m1), m5(m5), m6(m9), m7(m13),
+        m8(m2), m9(m6), m10(m10), m11(m14), m12(m3), m13(m7), m14(m11),
+        m15(m15) {}
   inline mat4(vec4 &a, vec4 &b, vec4 &c, vec4 &d)
       : col0(a), col1(b), col2(c), col3(d) {}
   inline mat4(vec4 &&a, vec4 &&b, vec4 &&c, vec4 &&d)
@@ -239,10 +245,10 @@ inline mat4 getViewportMatrix(vec4 v) {
   auto y = v.y;
   auto w = v.z;
   auto h = v.w;
-  return {vec4(w * 0.5, 0, 0, x + w * 0.5 - 0.5),
-          vec4(0, h * 0.5, 0, y + h * 0.5 - 0.5),
-          {0, 0, 1, 0},
-          {0, 0, 0, 1}};
+  return {w * 0.5f, 0,        0, x + w * 0.5f - 0.5f,
+          0,        h * 0.5f, 0, y + h * 0.5f - 0.5f,
+          0,        0,        1, 0,
+          0,        0,        0, 1};
 }
 
 inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
