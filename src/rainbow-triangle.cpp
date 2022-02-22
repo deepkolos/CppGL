@@ -22,10 +22,8 @@
 using namespace CppGL;
 using namespace rttr;
 
-#define attribute [[attribute]]
-#define uniform [[uniform]]
-#define varying [[varying]]
-#define discard return DISCARD()
+#include "CppGL/marco.h" // 必须在所有include后面
+
 static struct VertexShaderSource : ShaderSource {
   attribute vec4 position;
   attribute vec4 color;
@@ -51,32 +49,21 @@ static struct FragmentShaderSource : ShaderSource {
   RTTR_ENABLE(ShaderSource)
 } fragmentShaderSource;
 
-#undef attribute
-#undef uniform
-#undef varying
-#undef discard
-
 MY_RTTR_REGISTRATION {
   using S = VertexShaderSource;
   using M = ShaderSourceMeta;
-  auto P = policy::prop::bind_as_ptr;
   registration::class_<S>("VertexShaderSource")
-      .property("position", &S::position)(metadata(0, M::Attribute),
-                                          metadata(1, sizeof(S::position)), P)
-      .property("color", &S::color)(metadata(0, M::Attribute),
-                                    metadata(1, sizeof(S::color)), P)
-      .property("v_color", &S::v_color)(metadata(0, M::Varying),
-                                        metadata(1, sizeof(S::v_color)), P)
+      .MY_RTTR_PROP(position, M::Attribute)
+      .MY_RTTR_PROP(color, M::Attribute)
+      .MY_RTTR_PROP(v_color, M::Varying)
       .method("main", &S::main);
 }
 
 MY_RTTR_REGISTRATION {
   using S = FragmentShaderSource;
   using M = ShaderSourceMeta;
-  auto P = policy::prop::bind_as_ptr;
   registration::class_<S>("FragmentShaderSource")
-      .property("v_color", &S::v_color)(metadata(0, M::Varying),
-                                        metadata(1, sizeof(S::v_color)), P)
+      .MY_RTTR_PROP(v_color, M::Varying)
       .method("main", &S::main);
 }
 
@@ -116,7 +103,7 @@ int main(void) {
   glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
 
   glVertexAttribPointer(positionLoc,
-                        4,        // 2 values per vertex shader iteration
+                        4,        // 4 values per vertex shader iteration
                         GL_FLOAT, // data is 32bit floats
                         GL_FALSE, // don't normalize
                         0,        // stride (0 = auto)

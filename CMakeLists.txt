@@ -11,5 +11,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 set(BUILD_BENCHMARKS FLASE)
 add_subdirectory(thirdparty/rttr-0.9.6)
 
-add_executable(CppGL src/main.cpp)
-target_link_libraries(CppGL RTTR::Core ${OpenCV_LIBS})
+add_executable(rainbow-triangle src/rainbow-triangle.cpp)
+target_link_libraries(rainbow-triangle RTTR::Core ${OpenCV_LIBS})
+
+add_executable(draw-cube-on-cube src/draw-cube-on-cube.cpp)
+target_link_libraries(draw-cube-on-cube RTTR::Core ${OpenCV_LIBS})

@@ -3,14 +3,13 @@
 #include "math.h"
 #include <functional>
 #include <map>
+#include <rttr/registration>
 #include <string>
 #include <vector>
-#include <rttr/registration>
 
 namespace CppGL {
 
-struct Program;
-
+using sampler2D = int;
 struct ShaderMeta {
   enum ShaderMetaType {
     Attribute,
@@ -33,8 +32,12 @@ struct ShaderSource {
   vec4 gl_Position;
   vec4 gl_FragColor;
   bool _discarded = false;
-  void DISCARD() { _discarded = true; }
-  vec4 texture2D(sample2D textureUint, vec2 uv) { return {}; }
+  inline static vec2 normalize(vec2 v) { return {}; };
+  inline static vec3 normalize(vec3 v) { return {}; };
+  inline static vec4 normalize(vec4 v) { return {}; };
+  inline static float dot(vec3 a, vec3 b) { return {}; };
+  inline void DISCARD() { _discarded = true; }
+  inline static vec4 texture2D(sample2D textureUint, vec2 uv) { return {}; }
   RTTR_ENABLE()
 };
 

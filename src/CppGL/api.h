@@ -6,15 +6,18 @@
 #include "global-state.h"
 #include "math.h"
 #include "program.h"
+#include "rttr/property.h"
 #include "rttr/string_view.h"
 #include "rttr/type.h"
 #include "rttr/variant.h"
 #include "shader.h"
+#include "texture.h"
 #include "vertex-array.h"
 #include <_types/_uint8_t.h>
 #include <cassert>
 #include <cstddef>
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <malloc/_malloc.h>
@@ -26,7 +29,45 @@
 #include <vector>
 
 namespace CppGL {
+namespace helper {
+inline Texture *getTextureFrom(int location) {
+  Texture *target = nullptr;
+  if (location == GL_TEXTURE_2D) {
+    target =
+        GLOBAL_STATE.textureUints[GLOBAL_STATE.ACTIVE_TEXTURE - GL_TEXTURE0]
+            .map;
+  }
+  return target;
+}
+inline void setUniform(
+    int location,
+    std::function<void(rttr::property &, rttr::property &, ShaderSource *,
+                       ShaderSource *, rttr::type &, rttr::type &)>
+        fn) {
+  Program *program = GLOBAL_STATE.CURRENT_PROGRAM;
+
+  if (program == nullptr)
+    return;
+
+  auto vertexShader = program->vertexShader->source;
+  auto fragmentShader = program->fragmentShader->source;
+  auto vertexTypeInfo = vertexShader->get_derived_info().m_type;
+  auto fragmentTypeInfo = fragmentShader->get_derived_info().m_type;
+
+  for (auto [name, info] : program->unifroms) {
+    if (info.location == location) {
+      auto vertexProp = vertexTypeInfo.get_property(name);
+      auto fragmentProp = fragmentTypeInfo.get_property(name);
+      fn(vertexProp, fragmentProp, vertexShader, fragmentShader, vertexTypeInfo,
+         fragmentTypeInfo);
+      return;
+    }
+  }
+}
+} // namespace helper
+
 using str = rttr::string_view;
+
 inline Shader *glCreateShader(Shader::Type type) { return new Shader(type); }
 inline void glShaderSource(Shader *shader, ShaderSource *source) {
   shader->source = source;
@@ -333,5 +374,142 @@ inline void glDrawArrays(int mode, int first, int count) {
 
   delete varyingMem;
   delete varyingLerpedMem;
+}
+
+inline Texture *glCreateTexture() { return new Texture(); }
+inline void glBindTexture(int location, Texture *tex) {
+  if (location == GL_TEXTURE_2D)
+    GLOBAL_STATE.textureUints[GLOBAL_STATE.ACTIVE_TEXTURE - GL_TEXTURE0].map =
+        tex;
+}
+inline void glTexImage2D(int location, int mipLevel, int internalFormat,
+                         int width, int height, int border, int format,
+                         int dataType, const void *data) {
+  Texture *target = nullptr;
+  if (location == GL_TEXTURE_2D) {
+    target =
+        GLOBAL_STATE.textureUints[GLOBAL_STATE.ACTIVE_TEXTURE - GL_TEXTURE0]
+            .map;
+  }
+  if (target->mips.size() <= mipLevel)
+    target->mips.resize(mipLevel + 1);
+  target->mips[mipLevel] = {data,   0,      width,    height,
+                            format, border, dataType, internalFormat};
+}
+inline void glTexParameteri(int location, int key, int value) {
+  Texture *target = helper::getTextureFrom(location);
+
+  if (target) {
+    if (key == GL_TEXTURE_MIN_FILTER)
+      target->TEXTURE_MIN_FILTER = value;
+    if (key == GL_TEXTURE_MAG_FILTER)
+      target->TEXTURE_MIN_FILTER = value;
+    if (key == GL_TEXTURE_WRAP_S)
+      target->TEXTURE_MIN_FILTER = value;
+    if (key == GL_TEXTURE_WRAP_T)
+      target->TEXTURE_MIN_FILTER = value;
+  }
+}
+inline void glGenerateMipmap(int location) {
+  Texture *target = helper::getTextureFrom(location);
+  // TODO
+}
+
+inline void glViewport(float x, float y, float w, float h) {
+  GLOBAL_STATE.VIEWPORT.x = x;
+  GLOBAL_STATE.VIEWPORT.y = y;
+  GLOBAL_STATE.VIEWPORT.z = w;
+  GLOBAL_STATE.VIEWPORT.w = h;
+}
+
+inline void glClearColor(float r, float g, float b, float a) {
+  GLOBAL_STATE.COLOR_CLEAR_VALUE = {r, g, b, a};
+}
+inline void glClear(int mask) {
+  // TODO 应该情况目前的framebuffer,但是目前的framebuffer还没有
+}
+inline void glEnable(int feature) {
+  if (feature == GL_CULL_FACE)
+    GLOBAL_STATE.CULL_FACE = GL_TRUE;
+  if (feature == GL_DEPTH_TEST)
+    GLOBAL_STATE.DEPTH_TEST = GL_TRUE;
+}
+inline void glActiveTexture(int textureUint) {
+  GLOBAL_STATE.ACTIVE_TEXTURE = textureUint;
+}
+inline void glUniform1i(int location, int value) {
+  helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid())
+          vertexProp.set_value(*vertexShader, value);
+        if (fragmentProp.is_valid())
+          fragmentProp.set_value(*fragmentShader, value);
+      });
+}
+inline void glUniform3fv(int location, int count, const void *data) {
+  helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto var = vertexProp.get_value(*vertexShader);
+          auto varPtr = var.get_value<vec3 *>();
+          auto size = vertexProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+
+        if (fragmentProp.is_valid()) {
+          auto var = fragmentProp.get_value(*fragmentShader);
+          auto varPtr = var.get_value<vec3 *>();
+          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+      });
+}
+inline void glUniformMatrix4fv(int location, int count, bool transpose,
+                               const void *data) {
+  helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto var = vertexProp.get_value(*vertexShader);
+          auto varPtr = var.get_value<mat4 *>();
+          auto size = vertexProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+
+        if (fragmentProp.is_valid()) {
+          auto var = fragmentProp.get_value(*fragmentShader);
+          auto varPtr = var.get_value<mat4 *>();
+          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+      });
+}
+inline void glUniform4fv(int location, int count, const void *data) {
+  helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto var = vertexProp.get_value(*vertexShader);
+          auto varPtr = var.get_value<vec4 *>();
+          auto size = vertexProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+
+        if (fragmentProp.is_valid()) {
+          auto var = fragmentProp.get_value(*fragmentShader);
+          auto varPtr = var.get_value<vec4 *>();
+          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+      });
+}
+inline void glDrawElements(int mode, int count, int type, const void *indices) {
+
 }
 } // namespace CppGL

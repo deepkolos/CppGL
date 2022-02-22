@@ -46,7 +46,13 @@ struct vec3 {
   inline vec3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z){};
 
   inline vec3 operator/(vec3 v) { return {x / v.x, y / v.y, z / v.z}; }
+  inline vec3 operator*(vec3 v) { return {x * v.x, y * v.y, z * v.z}; }
+  inline vec3 operator+(vec3 v) { return {x + v.x, y + v.y, z + v.z}; }
+  inline vec3 operator-(vec3 v) { return {x - v.x, y - v.y, z - v.z}; }
   inline vec3 operator/(float f) { return {x / f, y / f, z / f}; }
+  inline vec3 operator*(float f) { return {x * f, y * f, z * f}; }
+  inline vec3 operator+(float f) { return {x + f, y + f, z + f}; }
+  inline vec3 operator-(float f) { return {x - f, y - f, z - f}; }
 
   inline float lerpBarycentric(vec3 v) { return x * v.x + y * v.y + z * v.z; }
 };
@@ -68,14 +74,18 @@ struct vec4 {
   };
   vec4(float x = 0, float y = 0, float z = 0, float w = 0)
       : x(x), y(y), z(z), w(w) {}
+  vec4(vec3 v, float w = 0) : x(v.x), y(v.y), z(v.z), w(w) {}
 
   inline vec4 operator*(vec4 v) { return {x * v.x, y * v.y, z * v.z, w * v.w}; }
+  inline vec4 operator/(vec4 v) { return {x / v.x, y / v.y, z / v.z, w / v.w}; }
+  inline vec4 operator+(vec4 v) { return {x + v.x, y + v.y, z + v.z, w + v.w}; }
+  inline vec4 operator-(vec4 v) { return {x - v.x, y - v.y, z - v.z, w - v.w}; }
   inline vec4 operator/(float f) { return {x / f, y / f, z / f, w / f}; }
   inline vec4 operator*(float f) { return {x * f, y * f, z * f, w * f}; }
   inline vec4 operator+(float f) { return {x + f, y + f, z + f, w + f}; }
   inline vec4 operator-(float f) { return {x - f, y - f, z - f, w - f}; }
 };
-
+struct mat4;
 struct mat3 {
   union {
     vec3 col[3];
@@ -93,6 +103,15 @@ struct mat3 {
     };
   };
   inline mat3() {}
+  mat3(mat4 m);
+
+  inline vec3 operator*(vec3 v) {
+    return {
+        m0 * v.x + m3 * v.y + m6 * v.z,
+        m1 * v.x + m4 * v.y + m7 * v.z,
+        m2 * v.x + m5 * v.y + m8 * v.z,
+    };
+  }
 };
 struct mat4 {
   union {
@@ -143,7 +162,13 @@ struct mat4 {
     auto w = e[3] * v.x + e[7] * v.y + e[11] * v.z + e[15] * v.w;
     return {x, y, z, w};
   }
+
+  inline mat4 operator*(mat4 m) { return {}; }
 };
+
+inline mat3::mat3(mat4 m)
+    : m0(m.m0), m1(m.m1), m2(m.m2), m3(m.m4), m4(m.m5), m5(m.m6), m6(m.m8),
+      m7(m.m9), m8(m.m10){};
 
 struct box2 {
   vec2 min{std::numeric_limits<float>::max(),

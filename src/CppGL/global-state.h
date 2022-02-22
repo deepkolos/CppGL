@@ -1,6 +1,7 @@
 #pragma once
 
 #include "buffer.h"
+#include "constant.h"
 #include "data-type.h"
 #include "math.h"
 #include "texture.h"
@@ -17,10 +18,10 @@ struct GlobalState {
   Buffer *ARRAY_BUFFER_BINDING = nullptr;
   Program *CURRENT_PROGRAM = nullptr;
   VertexArray *VERTEX_ARRAY_BINDING = nullptr;
-  int ACTIVE_TEXTURE = TEXTURE0;
+  int ACTIVE_TEXTURE = GL_TEXTURE0;
 
   // texture units
-  std::vector<TextureUnit> textureUints;
+  std::vector<TextureUnit> textureUints{10};
 
   // clear state
   vec4 COLOR_CLEAR_VALUE;
