@@ -17,6 +17,7 @@ const int GL_TEXTURE_WRAP_S = 11;
 const int GL_TEXTURE_WRAP_T = 12;
 const int GL_CLAMP_TO_EDGE = 13;
 const int GL_RGBA = 14;
+const int GL_DEPTH_COMPONENT32F = 15;
 const int GL_COLOR_BUFFER_BIT = 1;
 const int GL_DEPTH_BUFFER_BIT = 2;
 const int GL_DEPTH_TEST = 17;

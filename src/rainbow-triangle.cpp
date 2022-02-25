@@ -1,5 +1,6 @@
 #include "CppGL/api.h"
 #include "CppGL/attribute.h"
+#include "CppGL/constant.h"
 #include "CppGL/data-type.h"
 #include "CppGL/math.h"
 #include "CppGL/program.h"
@@ -7,6 +8,7 @@
 #include "rttr.h"
 #include "rttr/registration.h"
 #include "rttr/registration_friend.h"
+#include "utils.h"
 #include <_types/_uint8_t.h>
 #include <iostream>
 #include <map>
@@ -29,8 +31,8 @@ static struct VertexShaderSource : ShaderSource {
   attribute vec4 color;
   varying vec4 v_color;
   void main() {
-    std::cout << "vert:" << position << std::endl;
-    std::cout << "vert:" << color << std::endl;
+    std::cout << "vert: position" << position << std::endl;
+    std::cout << "vert: color   " << color << std::endl;
 
     gl_Position = position;
     v_color = color;
@@ -84,11 +86,10 @@ int main(void) {
   auto positionLoc = glGetAttribLocation(program, "position");
   auto colorLoc = glGetAttribLocation(program, "color");
 
-  static float vertexPositions[] = {0, 0.7, 0,   1,    0.5, -0.7,
-                                    0, 1,   -.5, -0.7, 0,   1};
-  static uint8_t vertexColors[] = {255, 0,   0, 255, 0,   255,
-                                   0,   255, 0, 0,   255, 255};
+  static float vertexPositions[] = {0, 0.7, 0.5, -0.7, -0.5, -0.7};
+  static uint8_t vertexColors[] = {255, 0, 0, 0, 255, 0, 0, 0, 255};
 
+  static const uint16_t vertexIndices[] = {0, 1, 2};
   auto positionBuffer = glCreateBuffer();
   glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions,
@@ -99,11 +100,16 @@ int main(void) {
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors,
                GL_STATIC_DRAW);
 
+  const auto indexBuffer = glCreateBuffer();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertexIndices), vertexIndices,
+               GL_STATIC_DRAW);
+
   glEnableVertexAttribArray(positionLoc);
   glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
 
   glVertexAttribPointer(positionLoc,
-                        4,        // 4 values per vertex shader iteration
+                        2,        // 2 values per vertex shader iteration
                         GL_FLOAT, // data is 32bit floats
                         GL_FALSE, // don't normalize
                         0,        // stride (0 = auto)
@@ -113,13 +119,17 @@ int main(void) {
   glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
   glEnableVertexAttribArray(colorLoc);
   glVertexAttribPointer(colorLoc,
-                        4, // 4 values per vertex shader iteration
+                        3, // 3 values per vertex shader iteration
                         GL_UNSIGNED_BYTE, // data is 8bit unsigned bytes
                         GL_TRUE,          // do normalize
                         0,                // stride (0 = auto)
                         0                 // offset into buffer
   );
-
+  glViewport(0, 0, 300, 150);
   glUseProgram(program);
   glDrawArrays(GL_TRIANGLES, 0, 3);
+  // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, 0);
+
+  // 显示渲染结果
+  displayBuffers();
 }

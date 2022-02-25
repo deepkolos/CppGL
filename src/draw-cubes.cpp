@@ -7,6 +7,7 @@
 #include "rttr.h"
 #include "rttr/registration.h"
 #include "rttr/registration_friend.h"
+#include "utils.h"
 #include <_types/_uint8_t.h>
 #include <iostream>
 #include <map>
@@ -36,6 +37,8 @@ static struct VertexShaderSource : ShaderSource {
   varying vec2 v_texcoord;
   void main() {
     gl_Position = projection * modelView * position;
+    // std::cout << "vert:" << projection << std::endl;
+    // std::cout << "vert:" << gl_Position << position << std::endl;
     v_normal = mat3(modelView) * normal;
     v_texcoord = texcoord;
   }
@@ -62,7 +65,10 @@ static struct FragmentShaderSource : ShaderSource {
     decalColor.b *= decalColor.a;
     color = color * (1.0 - decalColor.a) + decalColor;
     // gl_FragColor = vec4(color.rgb * light, color.a);
+    // std::cout << "frag:" << color << normal << decalColor << std::endl;
     gl_FragColor = vec4(vec3(color.r, color.g, color.b) * light, color.a);
+    // gl_FragColor = vec4(vec3(color.r, color.g, color.b), color.a);
+    // gl_FragColor = vec4(0, 1, 1, 1);
   }
 
   RTTR_ENABLE(ShaderSource)
@@ -120,21 +126,22 @@ int main(void) {
   auto diffuseMultLoc = glGetUniformLocation(program, "diffuseMult");
   auto lightDirLoc = glGetUniformLocation(program, "lightDir");
 
-  // vertex positions for a cube
+  // 每个面4个点, 6个面 共24个点
+  // vertex positions for a cube (24*3)
   static const float cubeVertexPositions[] = {
       1,  1,  -1, 1,  1,  1,  1,  -1, 1,  1,  -1, -1, -1, 1,  1,  -1, 1,  -1,
       -1, -1, -1, -1, -1, 1,  -1, 1,  1,  1,  1,  1,  1,  1,  -1, -1, 1,  -1,
       -1, -1, -1, 1,  -1, -1, 1,  -1, 1,  -1, -1, 1,  1,  1,  1,  -1, 1,  1,
       -1, -1, 1,  1,  -1, 1,  -1, 1,  -1, 1,  1,  -1, 1,  -1, -1, -1, -1, -1,
   };
-  // vertex normals for a cube
+  // vertex normals for a cube (24*3)
   static const float cubeVertexNormals[] = {
       1,  0,  0, 1,  0,  0, 1, 0,  0,  1, 0,  0,  -1, 0, 0,  -1, 0, 0,
       -1, 0,  0, -1, 0,  0, 0, 1,  0,  0, 1,  0,  0,  1, 0,  0,  1, 0,
       0,  -1, 0, 0,  -1, 0, 0, -1, 0,  0, -1, 0,  0,  0, 1,  0,  0, 1,
       0,  0,  1, 0,  0,  1, 0, 0,  -1, 0, 0,  -1, 0,  0, -1, 0,  0, -1,
   };
-  // vertex texture coordinates for a cube
+  // vertex texture coordinates for a cube (24*2)
   static const float cubeVertexTexcoords[] = {
       1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1,
       1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1,
@@ -188,15 +195,25 @@ int main(void) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  static uint8_t decalTextureData[32 * 32 * 4] = {0};
+  // clang-format off
+  static uint8_t decalTextureData[7 * 7 * 4] = {
+    0,0,0,0, /**/ 0,0,0,0, /**/ 0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+    0,0,0,0, /**/ 0,0,0,0, /**/ 255,0,0,255, /**/   0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+    0,0,0,0, /**/ 0,0,0,0, /**/ 255,0,0,255, /**/   0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+    0,0,0,0, /**/ 0,0,0,0, /**/ 255,0,0,255, /**/   255,0,0,255, /**/   0,0,0,0,     /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+    0,0,0,0, /**/ 0,0,0,0, /**/ 255,0,0,255, /**/   0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+    0,0,0,0, /**/ 0,0,0,0, /**/ 255,0,0,255, /**/   255,0,0,255, /**/   255,0,0,255, /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+    0,0,0,0, /**/ 0,0,0,0, /**/ 0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,     /**/   0,0,0,0,/**/ 0,0,0,0, /**/
+  };
+  // clang-format on
+  // std::fill_n(decalTextureData, 5 * 5 * 4, 255);
   const auto decalTexture = glCreateTexture();
   glBindTexture(GL_TEXTURE_2D, decalTexture);
   glTexImage2D(GL_TEXTURE_2D,
                0,                // mip level
                GL_RGBA,          // internal format
-               32,               // width
-               32,               // height
+               7,                // width
+               7,                // height
                0,                // border
                GL_RGBA,          // format
                GL_UNSIGNED_BYTE, // type
@@ -206,8 +223,9 @@ int main(void) {
   // above this line is initialization code
   // --------------------------------------
   // below is rendering code.
-
-  glViewport(0, 0, 300, 150);
+  float width = 300;
+  float height = 150;
+  glViewport(0, 0, width, height);
 
   glClearColor(0.5, 0.7, 1.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -261,26 +279,35 @@ int main(void) {
   glBindTexture(GL_TEXTURE_2D, decalTexture);
   glUniform1i(decalLoc, texUnit);
 
-  static const float lightDirLocData[3] = {};
-  glUniform3fv(lightDirLoc, 3, lightDirLocData);
+  static const vec3 lightDirLocData = normalize(vec3{1, 5, 8});
+  glUniform3fv(lightDirLoc, 3, &lightDirLocData);
 
-  // const projection =
-  //     m4.perspective(60 * Math.PI / 180,                             // fov
-  //                    gl.canvas.clientWidth / gl.canvas.clientHeight, //
-  //                    aspect 0.1, // near 10, // far
-  //     );
-  static mat4 projection;
+  static mat4 projection = mat4::perspective(60 * M_PI / 180, // fov
+                                             width / height,  // aspect
+                                             1,               // near
+                                             10               // far
+  );
   glUniformMatrix4fv(projectionLoc, 1, false, &projection);
 
   // draw center cube
-
   mat4 modelView;
-  // modelView = m4.translate(modelView, 0, 0, -4);
-  // modelView = m4.xRotate(modelView, 0.5);
-  // modelView = m4.yRotate(modelView, 0.5);
-
+  modelView.translate(0, 0, -4).xRotate(0.5).yRotate(0.5);
   glUniformMatrix4fv(modelViewLoc, 1, false, &modelView);
   vec4 diffuseMult{0.7, 1, 0.7, 1};
+  glUniform4fv(diffuseMultLoc, 4, &diffuseMult);
+  glDrawElements(GL_TRIANGLES,
+                 36,                // num vertices to process
+                 GL_UNSIGNED_SHORT, // type of indices
+                 0                  // offset on bytes to indices
+  );
+  // draw left cube
+
+  modelView.identity();
+  modelView.translate(-3, 0, -4).xRotate(0.5).yRotate(0.8);
+
+  glUniformMatrix4fv(modelViewLoc, 1, false, &modelView);
+
+  diffuseMult = {1, 0.7, 0.7, 1};
   glUniform4fv(diffuseMultLoc, 4, &diffuseMult);
 
   glDrawElements(GL_TRIANGLES,
@@ -289,37 +316,18 @@ int main(void) {
                  0                  // offset on bytes to indices
   );
 
-  // // draw left cube
+  // draw right cube
 
-  // modelView = m4.identity();
-  // modelView = m4.translate(modelView, -3, 0, -4);
-  // modelView = m4.xRotate(modelView, 0.5);
-  // modelView = m4.yRotate(modelView, 0.8);
+  modelView.identity().translate(3, 0, -4).xRotate(0.6).yRotate(-0.6);
 
-  // glUniformMatrix4fv(modelViewLoc, false, modelView);
+  glUniformMatrix4fv(modelViewLoc, 1, false, &modelView);
+  diffuseMult = {0.7, 0.7, 1, 1};
+  glUniform4fv(diffuseMultLoc, 4, &diffuseMult);
+  glDrawElements(GL_TRIANGLES,
+                 36,                // num vertices to process
+                 GL_UNSIGNED_SHORT, // type of indices
+                 0                  // offset on bytes to indices
+  );
 
-  // glUniform4fv(diffuseMultLoc, [ 1, 0.7, 0.7, 1 ]);
-
-  // glDrawElements(GL_TRIANGLES,
-  //                36,                // num vertices to process
-  //                GL_UNSIGNED_SHORT, // type of indices
-  //                0,                 // offset on bytes to indices
-  // );
-
-  // // draw right cube
-
-  // modelView = m4.identity();
-  // modelView = m4.translate(modelView, 3, 0, -4);
-  // modelView = m4.xRotate(modelView, 0.6);
-  // modelView = m4.yRotate(modelView, -0.6);
-
-  // glUniformMatrix4fv(modelViewLoc, false, modelView);
-
-  // glUniform4fv(diffuseMultLoc, [ 0.7, 0.7, 1, 1 ]);
-
-  // glDrawElements(GL_TRIANGLES,
-  //                36,                // num vertices to process
-  //                GL_UNSIGNED_SHORT, // type of indices
-  //                0,                 // offset on bytes to indices
-  // );
+  displayBuffers();
 }

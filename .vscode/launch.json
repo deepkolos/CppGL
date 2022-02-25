@@ -5,10 +5,34 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "LLDB",
+      "name": "rainbow-triangle",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/CppGL",
+      "program": "${workspaceFolder}/build/rainbow-triangle",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
+    },
+    {
+      "name": "draw-cubes",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/draw-cubes",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
+    },
+    {
+      "name": "texture-triangle",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/texture-triangle",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",

@@ -18,6 +18,8 @@ struct GlobalState {
   Buffer *ARRAY_BUFFER_BINDING = nullptr;
   Program *CURRENT_PROGRAM = nullptr;
   VertexArray *VERTEX_ARRAY_BINDING = nullptr;
+  RenderBuffer *RENDERBUFFER_BINDING = nullptr;
+  FrameBuffer *FRAMEBUFFER_BINDING = nullptr;
   int ACTIVE_TEXTURE = GL_TEXTURE0;
 
   // texture units

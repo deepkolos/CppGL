@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.h"
+#include <cmath>
 #include <functional>
 #include <map>
 #include <rttr/registration>
@@ -32,12 +33,20 @@ struct ShaderSource {
   vec4 gl_Position;
   vec4 gl_FragColor;
   bool _discarded = false;
-  inline static vec2 normalize(vec2 v) { return {}; };
-  inline static vec3 normalize(vec3 v) { return {}; };
-  inline static vec4 normalize(vec4 v) { return {}; };
-  inline static float dot(vec3 a, vec3 b) { return {}; };
+  inline static vec2 normalize(vec2 v) {
+    return v / std::sqrtf(v.x * v.x + v.y * v.y);
+  };
+  inline static vec3 normalize(vec3 v) {
+    return v / std::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+  };
+  inline static vec4 normalize(vec4 v) {
+    return v / std::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
+  };
+  inline static float dot(vec3 a, vec3 b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+  };
   inline void DISCARD() { _discarded = true; }
-  inline static vec4 texture2D(sample2D textureUint, vec2 uv) { return {}; }
+  static vec4 texture2D(sample2D textureUint, vec2 uv);
   RTTR_ENABLE()
 };
 

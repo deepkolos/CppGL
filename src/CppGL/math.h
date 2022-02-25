@@ -1,6 +1,7 @@
 #pragma once
 #include "../rttr.h"
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <utility>
 namespace CppGL {
@@ -143,7 +144,7 @@ struct mat4 {
     };
   };
 
-  inline mat4() {}
+  inline mat4() { identity(); }
   inline mat4(float m0, float m1, float m2, float m3, float m4, float m5,
               float m6, float m7, float m8, float m9, float m10, float m11,
               float m12, float m13, float m14, float m15)
@@ -163,7 +164,76 @@ struct mat4 {
     return {x, y, z, w};
   }
 
-  inline mat4 operator*(mat4 m) { return {}; }
+  inline mat4 operator*(mat4 m) {
+    const float a11 = e[0], a12 = e[4], a13 = e[8], a14 = e[12];
+    const float a21 = e[1], a22 = e[5], a23 = e[9], a24 = e[13];
+    const float a31 = e[2], a32 = e[6], a33 = e[10], a34 = e[14];
+    const float a41 = e[3], a42 = e[7], a43 = e[11], a44 = e[15];
+    const float b11 = m.e[0], b12 = m.e[4], b13 = m.e[8], b14 = m.e[12];
+    const float b21 = m.e[1], b22 = m.e[5], b23 = m.e[9], b24 = m.e[13];
+    const float b31 = m.e[2], b32 = m.e[6], b33 = m.e[10], b34 = m.e[14];
+    const float b41 = m.e[3], b42 = m.e[7], b43 = m.e[11], b44 = m.e[15];
+    mat4 out;
+    out.e[0] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
+    out.e[1] = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
+    out.e[2] = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
+    out.e[3] = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
+
+    out.e[4] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
+    out.e[5] = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
+    out.e[6] = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
+    out.e[7] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
+
+    out.e[8] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
+    out.e[9] = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
+    out.e[10] = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
+    out.e[12] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
+
+    out.e[13] = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
+    out.e[14] = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
+    out.e[11] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
+    out.e[15] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
+    return out;
+  }
+
+  inline static mat4 perspective(float fieldOfViewInRadians, float aspect,
+                                 float near, float far) {
+    float f = std::tanf(M_PI * 0.5 - 0.5 * fieldOfViewInRadians);
+    float rangeInv = 1.0 / (near - far);
+
+    return {vec4{f / aspect, 0, 0, 0}, vec4{0, f, 0, 0},
+            vec4{0, 0, (near + far) * rangeInv, -1},
+            vec4{0, 0, near * far * rangeInv * 2, 0}};
+  }
+  inline mat4 &identity() {
+    *this = {vec4{1, 0, 0, 0}, vec4{0, 1, 0, 0}, vec4{0, 0, 1, 0},
+             vec4{0, 0, 0, 1}};
+    return *this;
+  }
+  inline mat4 &translate(float x, float y, float z) {
+    e[12] += x;
+    e[13] += y;
+    e[14] += z;
+    return *this;
+  }
+  inline mat4 &yRotate(float angleInRadians) {
+    float c = std::cosf(angleInRadians);
+    float s = std::sinf(angleInRadians);
+
+    mat4 rotate{vec4{c, 0, -s, 0}, vec4{0, 1, 0, 0}, vec4{s, 0, c, 0},
+                vec4{0, 0, 0, 1}};
+    *this = *this * rotate;
+    return *this;
+  }
+  inline mat4 &xRotate(float angleInRadians) {
+    float c = std::cosf(angleInRadians);
+    float s = std::sinf(angleInRadians);
+
+    mat4 rotate{vec4{1, 0, 0, 0}, vec4{0, c, s, 0}, vec4{0, -s, c, 0},
+                vec4{0, 0, 0, 1}};
+    *this = *this * rotate;
+    return *this;
+  }
 };
 
 inline mat3::mat3(mat4 m)
@@ -275,6 +345,32 @@ inline mat4 getViewportMatrix(vec4 v) {
           0,        0,        1, 0,
           0,        0,        0, 1};
 }
+
+inline float clamp(float a, float min, float max) {
+  return std::min(std::max(a, min), max);
+}
+inline vec2 clamp(vec2 v, float min, float max) {
+  return {clamp(v.x, min, max), clamp(v.y, min, max)};
+}
+inline vec3 clamp(vec3 v, float min, float max) {
+  return {clamp(v.x, min, max), clamp(v.y, min, max), clamp(v.z, min, max)};
+}
+inline vec4 clamp(vec4 v, float min, float max) {
+  return {clamp(v.x, min, max), clamp(v.y, min, max), clamp(v.z, min, max),
+          clamp(v.w, min, max)};
+}
+
+inline float length(vec2 v) { return std::sqrtf(v.x * v.x + v.y * v.y); }
+inline float length(vec3 v) {
+  return std::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+inline float length(vec4 v) {
+  return std::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w);
+}
+
+inline vec2 normalize(vec2 v) { return v / length(v); }
+inline vec3 normalize(vec3 v) { return v / length(v); }
+inline vec4 normalize(vec4 v) { return v / length(v); }
 
 inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
 inline float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }
