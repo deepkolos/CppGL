@@ -19,3 +19,6 @@ target_link_libraries(texture-triangle RTTR::Core ${OpenCV_LIBS})
 
 add_executable(draw-cubes src/draw-cubes.cpp)
 target_link_libraries(draw-cubes RTTR::Core ${OpenCV_LIBS})
+
+add_executable(draw-cube-on-cube src/draw-cube-on-cube.cpp)
+target_link_libraries(draw-cube-on-cube RTTR::Core ${OpenCV_LIBS})

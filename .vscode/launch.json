@@ -39,6 +39,18 @@
       "environment": [],
       "externalConsole": false,
       "MIMode": "lldb"
+    },
+    {
+      "name": "draw-cube-on-cube",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/draw-cube-on-cube",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
     }
   ]
 }

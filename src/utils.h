@@ -1,4 +1,5 @@
 #pragma once
+#include "CppGL/constant.h"
 #include "CppGL/global-state.h"
 #include "CppGL/math.h"
 #include <chrono>
@@ -19,9 +20,8 @@ inline void displayBuffers(bool wait = true) {
   auto fbo = GLOBAL_STATE.FRAMEBUFFER_BINDING;
   if (fbo == nullptr)
     fbo = &DEFAULT_FRAMEBUFFER;
-
-  auto frameBuffer = static_cast<vec4 *>(
-      const_cast<void *>(fbo->COLOR_ATTACHMENT0.attachment->mips[0]->data));
+  auto frameBufferTextureBuffer =
+      fbo->COLOR_ATTACHMENT0.attachment->mips[fbo->COLOR_ATTACHMENT0.level];
   auto zBuffer = static_cast<float *>(
       const_cast<void *>(fbo->DEPTH_ATTACHMENT.attachment->mips[0]->data));
 
@@ -32,12 +32,23 @@ inline void displayBuffers(bool wait = true) {
   for (int x = 0; x < (int)width; x++)
     for (int y = 0; y < (int)height; y++) {
       int bufferIndex = x + y * width;
-      vec4 &pixel = frameBuffer[bufferIndex];
       float depth = clamp(zBuffer[bufferIndex], 0, 1);
       int pixelIndex = (x + (height - y) * width) * 3;
-      image.data[pixelIndex] = (uchar)(pixel.b * 255);
-      image.data[pixelIndex + 1] = (uchar)(pixel.g * 255);
-      image.data[pixelIndex + 2] = (uchar)(pixel.r * 255);
+      if (frameBufferTextureBuffer->internalFormat == GL_RGBA) {
+        if (frameBufferTextureBuffer->dataType == GL_FLOAT) {
+          vec4 *frameBuffer = (vec4 *)frameBufferTextureBuffer->data;
+          vec4 &pixel = frameBuffer[bufferIndex];
+          image.data[pixelIndex] = (uchar)(pixel.b * 255);
+          image.data[pixelIndex + 1] = (uchar)(pixel.g * 255);
+          image.data[pixelIndex + 2] = (uchar)(pixel.r * 255);
+        } else if (frameBufferTextureBuffer->dataType == GL_UNSIGNED_BYTE) {
+          uint8_t *frameBuffer = (uint8_t *)frameBufferTextureBuffer->data;
+          image.data[pixelIndex] = frameBuffer[bufferIndex * 4 + 2];
+          image.data[pixelIndex + 1] = frameBuffer[bufferIndex * 4 + 1];
+          image.data[pixelIndex + 2] = frameBuffer[bufferIndex * 4];
+        }
+      }
+
       // image.data[pixelIndex] = 255;   // b
       // image.data[pixelIndex + 1] = 0; // g
       // image.data[pixelIndex + 2] = 0; // r

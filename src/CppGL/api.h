@@ -144,10 +144,11 @@ inline void draw(int mode, int first, int count, int dataType,
   }
 
   // TODO resize
-  auto frameBuffer = static_cast<vec4 *>(
-      const_cast<void *>(fbo->COLOR_ATTACHMENT0.attachment->mips[0]->data));
-  auto zBuffer = static_cast<float *>(
-      const_cast<void *>(fbo->DEPTH_ATTACHMENT.attachment->mips[0]->data));
+  auto frameBufferTextureBuffer =
+      fbo->COLOR_ATTACHMENT0.attachment->mips[fbo->COLOR_ATTACHMENT0.level];
+  auto zBuffer = static_cast<float *>(const_cast<void *>(
+      fbo->DEPTH_ATTACHMENT.attachment->mips[fbo->DEPTH_ATTACHMENT.level]
+          ->data));
 
   /**
    * @brief 循环处理顶点
@@ -256,6 +257,7 @@ inline void draw(int mode, int first, int count, int dataType,
                             if0Be1(triangleClip.c.w)};
       vec3 triangleClipVecZ{triangleClip.a.z, triangleClip.b.z,
                             triangleClip.c.z};
+      // 把齐次坐标系下转为正常坐标系 TODO 理解
       vec3 triangleClipVecZDivZ = triangleClipVecZ / triangleClipVecW;
       triangle triangleViewport = triangleClip * viewportMatrix;
       triangle triangleProjDiv =
@@ -287,7 +289,7 @@ inline void draw(int mode, int first, int count, int dataType,
           // TODO 这里还是不懂
           bcClip = bcClip / (bcClip.x + bcClip.y + bcClip.z);
 
-          // 插值得到深度
+          // 插值得到深度 TODO 理解为什么需要1-z
           float positionDepth =
               1 - triangleClipVecZDivZ.lerpBarycentric(bcClip);
           float zBufferDepth = zBuffer[bufferIndex];
@@ -325,12 +327,23 @@ inline void draw(int mode, int first, int count, int dataType,
           if (fragmentShader->_discarded)
             continue;
 
-          // std::cout << x << "," << y << ":" << fragmentShader->gl_FragColor
-          //           << std::endl;
+          auto &color = fragmentShader->gl_FragColor;
 
           // 更新zBuffer frameBuffer
           zBuffer[bufferIndex] = positionDepth;
-          frameBuffer[bufferIndex] = fragmentShader->gl_FragColor;
+
+          if (frameBufferTextureBuffer->internalFormat == GL_RGBA) {
+            if (frameBufferTextureBuffer->dataType == GL_FLOAT) {
+              vec4 *frameBuffer = (vec4 *)frameBufferTextureBuffer->data;
+              frameBuffer[bufferIndex] = color;
+            } else if (frameBufferTextureBuffer->dataType == GL_UNSIGNED_BYTE) {
+              uint8_t *frameBuffer = (uint8_t *)frameBufferTextureBuffer->data;
+              frameBuffer[bufferIndex * 4] = (uint8_t)(color.r * 255);
+              frameBuffer[bufferIndex * 4 + 1] = (uint8_t)(color.g * 255);
+              frameBuffer[bufferIndex * 4 + 2] = (uint8_t)(color.b * 255);
+              frameBuffer[bufferIndex * 4 + 3] = (uint8_t)(color.a * 255);
+            }
+          }
         }
       }
     }
@@ -500,6 +513,17 @@ inline void glTexImage2D(int location, int mipLevel, int internalFormat,
   if (target->mips.size() <= mipLevel)
     target->mips.resize(mipLevel + 1);
 
+  if (data == nullptr) {
+    int storeSize = width * height;
+    if (internalFormat == GL_RGBA)
+      storeSize *= 4;
+
+    if (dataType == GL_UNSIGNED_BYTE)
+      data = malloc(sizeof(uint8_t) * storeSize);
+    if (dataType == GL_UNSIGNED_SHORT)
+      data = malloc(sizeof(uint16_t) * storeSize);
+  }
+
   target->mips[mipLevel] = new TextureBuffer{
       data, 0, width, height, format, border, dataType, internalFormat};
 }
@@ -543,12 +567,29 @@ inline void glClear(int mask) {
   if (mask | GL_COLOR_BUFFER_BIT &&
       fbo->COLOR_ATTACHMENT0.attachment != nullptr &&
       fbo->COLOR_ATTACHMENT0.attachment->mips.size() != 0) {
-    auto frameBuffer = static_cast<vec4 *>(
-        const_cast<void *>(fbo->COLOR_ATTACHMENT0.attachment->mips[0]->data));
+    auto frameBufferTextureBuffer =
+        fbo->COLOR_ATTACHMENT0.attachment->mips[fbo->COLOR_ATTACHMENT0.level];
+    auto color = GLOBAL_STATE.COLOR_CLEAR_VALUE;
+    auto colorRedU8 = (uint8_t)(color.r * 255);
+    auto colorGreenU8 = (uint8_t)(color.g * 255);
+    auto colorBlueU8 = (uint8_t)(color.g * 255);
+    auto colorAlphaU8 = (uint8_t)(color.g * 255);
     // clearColor
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
-        frameBuffer[x + y * width] = GLOBAL_STATE.COLOR_CLEAR_VALUE;
+        int bufferIndex = x + y * width;
+        if (frameBufferTextureBuffer->internalFormat == GL_RGBA) {
+          if (frameBufferTextureBuffer->dataType == GL_FLOAT) {
+            vec4 *frameBuffer = (vec4 *)frameBufferTextureBuffer->data;
+            frameBuffer[bufferIndex] = color;
+          } else if (frameBufferTextureBuffer->dataType == GL_UNSIGNED_BYTE) {
+            uint8_t *frameBuffer = (uint8_t *)frameBufferTextureBuffer->data;
+            frameBuffer[bufferIndex * 4] = colorRedU8;
+            frameBuffer[bufferIndex * 4 + 1] = colorGreenU8;
+            frameBuffer[bufferIndex * 4 + 2] = colorBlueU8;
+            frameBuffer[bufferIndex * 4 + 3] = colorAlphaU8;
+          }
+        }
       }
     }
   }
@@ -653,5 +694,54 @@ inline void glDrawElements(int mode, int count, int dataType,
 }
 inline void glDrawArrays(int mode, int first, int count) {
   helper::draw(mode, first, count, 0, 0);
+}
+inline FrameBuffer *glCreateFramebuffer() { return new FrameBuffer(); }
+inline RenderBuffer *glCreateRenderbuffer() { return new RenderBuffer(); }
+inline void glBindFramebuffer(int location, FrameBuffer *buffer) {
+  GLOBAL_STATE.FRAMEBUFFER_BINDING = buffer;
+}
+inline void glBindRenderbuffer(int location, RenderBuffer *buffer) {
+  GLOBAL_STATE.RENDERBUFFER_BINDING = buffer;
+}
+inline void glFramebufferTexture2D(int target, int attachment, int textarget,
+                                   Texture *texture, int level) {
+  if (target == GL_FRAMEBUFFER && GLOBAL_STATE.RENDERBUFFER_BINDING) {
+    if (attachment == GL_COLOR_ATTACHMENT0) {
+      if (textarget == GL_TEXTURE_2D) {
+        GLOBAL_STATE.FRAMEBUFFER_BINDING->COLOR_ATTACHMENT0.attachment =
+            texture;
+        GLOBAL_STATE.FRAMEBUFFER_BINDING->COLOR_ATTACHMENT0.level = level;
+      }
+    }
+  }
+}
+inline void glFramebufferRenderbuffer(int target, int attachment,
+                                      int renderbufferTarget,
+                                      RenderBuffer *renderbuffer) {
+  if (target == GL_FRAMEBUFFER && GLOBAL_STATE.RENDERBUFFER_BINDING) {
+    if (attachment == GL_DEPTH_ATTACHMENT) {
+      if (renderbufferTarget == GL_RENDERBUFFER) {
+        GLOBAL_STATE.FRAMEBUFFER_BINDING->DEPTH_ATTACHMENT.attachment =
+            renderbuffer->attachment;
+      }
+    }
+  }
+}
+inline void glRenderbufferStorage(int target, int internalFormat, int width,
+                                  int height) {
+  if (target == GL_RENDERBUFFER) {
+    GLOBAL_STATE.RENDERBUFFER_BINDING->format = internalFormat;
+    GLOBAL_STATE.RENDERBUFFER_BINDING->width = width;
+    GLOBAL_STATE.RENDERBUFFER_BINDING->height = height;
+
+    if (internalFormat == GL_DEPTH_COMPONENT32F) {
+      int length = sizeof(float) * width * height;
+      auto texture = new Texture();
+      texture->mips.push_back(new TextureBuffer{
+          malloc(length), length, width, height, GL_DEPTH_COMPONENT32F, 0,
+          GL_FLOAT, GL_DEPTH_COMPONENT32F});
+      GLOBAL_STATE.RENDERBUFFER_BINDING->attachment = texture;
+    }
+  }
 }
 } // namespace CppGL
