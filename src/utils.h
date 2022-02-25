@@ -35,9 +35,12 @@ inline void displayBuffers(bool wait = true) {
       vec4 &pixel = frameBuffer[bufferIndex];
       float depth = clamp(zBuffer[bufferIndex], 0, 1);
       int pixelIndex = (x + (height - y) * width) * 3;
-      image.data[pixelIndex] = (uchar)(pixel.x * 255);
-      image.data[pixelIndex + 1] = (uchar)(pixel.y * 255);
-      image.data[pixelIndex + 2] = (uchar)(pixel.z * 255);
+      image.data[pixelIndex] = (uchar)(pixel.b * 255);
+      image.data[pixelIndex + 1] = (uchar)(pixel.g * 255);
+      image.data[pixelIndex + 2] = (uchar)(pixel.r * 255);
+      // image.data[pixelIndex] = 255;   // b
+      // image.data[pixelIndex + 1] = 0; // g
+      // image.data[pixelIndex + 2] = 0; // r
 
       imageZ.data[pixelIndex] = (uchar)(depth * 255);
       imageZ.data[pixelIndex + 1] = (uchar)(depth * 255);

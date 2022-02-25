@@ -31,6 +31,7 @@
 namespace CppGL {
 using str = rttr::string_view;
 
+void glClear(int mask);
 namespace helper {
 inline Texture *getTextureFrom(int location) {
   Texture *target = nullptr;
@@ -139,6 +140,7 @@ inline void draw(int mode, int first, int count, int dataType,
           GL_FLOAT, GL_DEPTH_COMPONENT32F});
       fbo->DEPTH_ATTACHMENT = {AttachmentType::DEPTH_ATTACHMENT, 0, 0, texture};
     }
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   }
 
   // TODO resize
