@@ -1,7 +1,8 @@
 #pragma once
-#include "CppGL/constant.h"
-#include "CppGL/global-state.h"
-#include "CppGL/math.h"
+#include <CppGL/buffer.h>
+#include <CppGL/constant.h>
+#include <CppGL/global-state.h>
+#include <CppGL/math.h>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -14,12 +15,12 @@ using namespace cv;
 using namespace CppGL;
 
 inline void displayBuffers(bool wait = true) {
-  const auto &viewport = GLOBAL_STATE.VIEWPORT;
+  const auto &viewport = GLOBAL::GLOBAL_STATE->VIEWPORT;
   const auto width = std::ceilf(viewport.z);
   const auto height = std::ceilf(viewport.w);
-  auto fbo = GLOBAL_STATE.FRAMEBUFFER_BINDING;
+  auto fbo = GLOBAL::GLOBAL_STATE->FRAMEBUFFER_BINDING;
   if (fbo == nullptr)
-    fbo = &DEFAULT_FRAMEBUFFER;
+    fbo = GLOBAL::DEFAULT_FRAMEBUFFER;
   auto frameBufferTextureBuffer =
       fbo->COLOR_ATTACHMENT0.attachment->mips[fbo->COLOR_ATTACHMENT0.level];
   auto zBuffer = static_cast<float *>(

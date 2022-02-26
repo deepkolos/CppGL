@@ -2,7 +2,6 @@
 #pragma once
 
 #include "constant.h"
-#include "attribute.h"
 #include "buffer.h"
 #include <vector>
 
@@ -22,6 +21,4 @@ struct VertexArray {
   std::vector<AttributeInfo> attributes{};
   Buffer *indexBuffer = nullptr;
 };
-
-static VertexArray DEFAULT_VERTEX_ARRAY;
 } // namespace CppGL

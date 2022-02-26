@@ -3,7 +3,6 @@
 #include "math.h"
 #include "rttr/string_view.h"
 #include "shader.h"
-#include "uniform.h"
 #include <vector>
 
 namespace CppGL {

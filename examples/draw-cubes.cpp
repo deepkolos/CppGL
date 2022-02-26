@@ -1,18 +1,6 @@
-#include "CppGL/api.h"
-#include "CppGL/attribute.h"
-#include "CppGL/data-type.h"
-#include "CppGL/math.h"
-#include "CppGL/program.h"
-#include "CppGL/shader.h"
-#include "rttr.h"
-#include "rttr/registration.h"
-#include "rttr/registration_friend.h"
 #include "utils.h"
-#include <_types/_uint8_t.h>
+#include <CppGL/api.h>
 #include <iostream>
-#include <map>
-#include <rttr/registration>
-#include <rttr/type>
 
 /**
  * @brief demo code from
@@ -74,30 +62,30 @@ static struct FragmentShaderSource : ShaderSource {
   RTTR_ENABLE(ShaderSource)
 } fragmentShaderSource;
 
-MY_RTTR_REGISTRATION {
+CPPGL_RTTR_REGISTRATION {
   using S = VertexShaderSource;
   using M = ShaderSourceMeta;
   registration::class_<S>("VertexShaderSource")
-      .MY_RTTR_PROP(position, M::Attribute)
-      .MY_RTTR_PROP(normal, M::Attribute)
-      .MY_RTTR_PROP(texcoord, M::Attribute)
-      .MY_RTTR_PROP(projection, M::Uniform)
-      .MY_RTTR_PROP(modelView, M::Uniform)
-      .MY_RTTR_PROP(v_normal, M::Varying)
-      .MY_RTTR_PROP(v_texcoord, M::Varying)
+      .CPPGL_RTTR_PROP(position, M::Attribute)
+      .CPPGL_RTTR_PROP(normal, M::Attribute)
+      .CPPGL_RTTR_PROP(texcoord, M::Attribute)
+      .CPPGL_RTTR_PROP(projection, M::Uniform)
+      .CPPGL_RTTR_PROP(modelView, M::Uniform)
+      .CPPGL_RTTR_PROP(v_normal, M::Varying)
+      .CPPGL_RTTR_PROP(v_texcoord, M::Varying)
       .method("main", &S::main);
 }
 
-MY_RTTR_REGISTRATION {
+CPPGL_RTTR_REGISTRATION {
   using S = FragmentShaderSource;
   using M = ShaderSourceMeta;
   registration::class_<S>("FragmentShaderSource")
-      .MY_RTTR_PROP(v_normal, M::Varying)
-      .MY_RTTR_PROP(v_texcoord, M::Varying)
-      .MY_RTTR_PROP(diffuse, M::Uniform)
-      .MY_RTTR_PROP(decal, M::Uniform)
-      .MY_RTTR_PROP(diffuseMult, M::Uniform)
-      .MY_RTTR_PROP(lightDir, M::Uniform)
+      .CPPGL_RTTR_PROP(v_normal, M::Varying)
+      .CPPGL_RTTR_PROP(v_texcoord, M::Varying)
+      .CPPGL_RTTR_PROP(diffuse, M::Uniform)
+      .CPPGL_RTTR_PROP(decal, M::Uniform)
+      .CPPGL_RTTR_PROP(diffuseMult, M::Uniform)
+      .CPPGL_RTTR_PROP(lightDir, M::Uniform)
       .method("main", &S::main);
 }
 

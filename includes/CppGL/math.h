@@ -1,5 +1,4 @@
 #pragma once
-#include "../rttr.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -325,14 +324,6 @@ struct triangle {
   inline triangle operator/(float f) { return {a / f, b / f, c / f}; }
 };
 
-MY_RTTR_REGISTRATION {
-  rttr::registration::class_<vec2>("vec2").constructor();
-  rttr::registration::class_<vec3>("vec3").constructor();
-  rttr::registration::class_<vec4>("vec4").constructor();
-  rttr::registration::class_<mat3>("mat3").constructor();
-  rttr::registration::class_<mat4>("mat4").constructor();
-}
-
 ///// methods ////
 
 inline mat4 getViewportMatrix(vec4 v) {
@@ -375,45 +366,4 @@ inline vec4 normalize(vec4 v) { return v / length(v); }
 inline float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
 inline float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }
 
-///// DEBUG /////
-inline std::ostream &operator<<(std::ostream &s, const vec4 &v) {
-  s << '[' << v.x << ',' << v.y << ',' << v.z << ',' << v.w << ']';
-  return s;
-}
-inline std::ostream &operator<<(std::ostream &s, const vec3 &v) {
-  s << '[' << v.x << ',' << v.y << ',' << v.z << ']';
-  return s;
-}
-inline std::ostream &operator<<(std::ostream &s, const vec2 &v) {
-  s << '[' << v.x << ',' << v.y << ']';
-  return s;
-}
-inline std::ostream &operator<<(std::ostream &s, const mat3 &m) {
-  s << "mat3:" << std::endl;
-  s << m.col[0] << std::endl;
-  s << m.col[1] << std::endl;
-  s << m.col[2] << std::endl;
-  return s;
-}
-inline std::ostream &operator<<(std::ostream &s, const mat4 &m) {
-  s << "mat4:" << std::endl;
-  s << m.col[0] << std::endl;
-  s << m.col[1] << std::endl;
-  s << m.col[2] << std::endl;
-  s << m.col[3] << std::endl;
-  return s;
-}
-inline std::ostream &operator<<(std::ostream &s, const box2 &b) {
-  s << "box2:" << std::endl;
-  s << b.min << std::endl;
-  s << b.max << std::endl;
-  return s;
-}
-inline std::ostream &operator<<(std::ostream &s, const triangle &t) {
-  s << "triangle:" << std::endl;
-  s << t.a << std::endl;
-  s << t.b << std::endl;
-  s << t.c << std::endl;
-  return s;
-}
 } // namespace CppGL

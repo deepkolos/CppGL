@@ -78,5 +78,12 @@ struct GlobalState {
   int POLYGON_OFFSET_FACTOR = 0;
 };
 
-static GlobalState GLOBAL_STATE;
+struct GLOBAL {
+  static GlobalState *GLOBAL_STATE;
+  static FrameBuffer *DEFAULT_FRAMEBUFFER;
+  static RenderBuffer *DEFAULT_RENDERBUFFER;
+  static VertexArray *DEFAULT_VERTEX_ARRAY;
+  // static bool initialized;
+  // static void init();
+};
 } // namespace CppGL

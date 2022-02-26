@@ -19,7 +19,6 @@ struct FrameBuffer {
   AttachmentInfo COLOR_ATTACHMENT0;
   AttachmentInfo DEPTH_ATTACHMENT;
 };
-static FrameBuffer DEFAULT_FRAMEBUFFER;
 
 struct RenderBuffer {
   int width;
@@ -27,5 +26,4 @@ struct RenderBuffer {
   int format;
   Texture *attachment;
 };
-static RenderBuffer DEFAULT_RENDERBUFFER;
 } // namespace CppGL
