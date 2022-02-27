@@ -131,11 +131,11 @@ inline void glTexParameteri(int location, int key, int value) {
     if (key == GL_TEXTURE_MIN_FILTER)
       target->TEXTURE_MIN_FILTER = value;
     if (key == GL_TEXTURE_MAG_FILTER)
-      target->TEXTURE_MIN_FILTER = value;
+      target->TEXTURE_MAG_FILTER = value;
     if (key == GL_TEXTURE_WRAP_S)
-      target->TEXTURE_MIN_FILTER = value;
+      target->TEXTURE_WRAP_S = value;
     if (key == GL_TEXTURE_WRAP_T)
-      target->TEXTURE_MIN_FILTER = value;
+      target->TEXTURE_WRAP_T = value;
   }
 }
 inline void glGenerateMipmap(int location) {

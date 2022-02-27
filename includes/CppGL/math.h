@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <utility>
+#include <vector>
 namespace CppGL {
 
 struct vec2;
@@ -233,6 +234,32 @@ struct mat4 {
     *this = *this * rotate;
     return *this;
   }
+
+  inline mat4 &from(std::vector<double> &arr) {
+    if (arr.size() == 16) {
+      e[0] = arr[0];
+      e[1] = arr[1];
+      e[2] = arr[2];
+      e[3] = arr[3];
+      e[4] = arr[4];
+      e[5] = arr[5];
+      e[6] = arr[6];
+      e[7] = arr[7];
+      e[8] = arr[8];
+      e[9] = arr[9];
+      e[10] = arr[10];
+      e[11] = arr[11];
+      e[12] = arr[12];
+      e[13] = arr[13];
+      e[14] = arr[14];
+      e[15] = arr[15];
+    }
+    return *this;
+  }
+
+  mat4 &from(std::vector<double> &translation, std::vector<double> &quaternion,
+             std::vector<double> &scale);
+  mat4 &invert();
 };
 
 inline mat3::mat3(mat4 m)

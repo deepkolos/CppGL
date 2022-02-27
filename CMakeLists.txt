@@ -17,6 +17,8 @@ set(BUILD_INSTALLER OFF)
 set(USE_PCH OFF)
 add_subdirectory(thirdparty/rttr-0.9.6)
 
+include_directories(thirdparty/tinygltf)
+
 add_library(CppGL STATIC src/api.cpp 
                          src/helper.cpp 
                          src/math.cpp 
@@ -36,3 +38,6 @@ target_link_libraries(draw-cubes RTTR::Core ${OpenCV_LIBS} CppGL)
 
 add_executable(draw-cube-on-cube examples/draw-cube-on-cube.cpp)
 target_link_libraries(draw-cube-on-cube RTTR::Core ${OpenCV_LIBS} CppGL)
+
+add_executable(gltf-cube examples/gltf-cube.cpp)
+target_link_libraries(gltf-cube RTTR::Core ${OpenCV_LIBS} CppGL)

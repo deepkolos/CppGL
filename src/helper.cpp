@@ -1,4 +1,3 @@
-#include "CppGL/global-state.h"
 #include <CppGL/api.h>
 
 namespace CppGL::Helper {

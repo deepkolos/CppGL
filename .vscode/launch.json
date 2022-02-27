@@ -51,6 +51,18 @@
       "environment": [],
       "externalConsole": false,
       "MIMode": "lldb"
+    },
+    {
+      "name": "gltf-cube",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/gltf-cube",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
     }
   ]
 }

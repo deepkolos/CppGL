@@ -1,17 +1,28 @@
+#include "CppGL/constant.h"
+#include "CppGL/math.h"
 #include <CppGL/global-state.h>
 #include <CppGL/shader.h>
 
 namespace CppGL {
 vec4 ShaderSource::texture2D(sample2D textureUint, vec2 uv) {
   auto &textureUintInfo = GLOBAL::GLOBAL_STATE->textureUints[textureUint];
-
-  if (textureUintInfo.map != nullptr) {
-    if (textureUintInfo.map->mips.size() != 0) {
-      auto mip = textureUintInfo.map->mips[0];
+  auto texture = textureUintInfo.map;
+  if (texture != nullptr) {
+    if (texture->mips.size() != 0) {
+      auto mip = texture->mips[0];
       // 左下坐标转左上坐标
-      vec2 uvClamped = clamp(uv, 0, 1);
-      int x = uvClamped.x * mip->width;
-      int y = (1 - uvClamped.y) * mip->height;
+      if (texture->TEXTURE_WRAP_S == GL_CLAMP_TO_EDGE)
+        uv.x = clamp(uv.x, 0, 1);
+      if (texture->TEXTURE_WRAP_T == GL_CLAMP_TO_EDGE)
+        uv.y = clamp(uv.y, 0, 1);
+
+      if (texture->TEXTURE_WRAP_S == GL_REPEAT && uv.x < 0 || uv.x > 1)
+        uv.x = std::abs(uv.x - (float)(int32_t)(uv.x));
+      if (texture->TEXTURE_WRAP_T == GL_REPEAT && uv.y < 0 || uv.y > 1)
+        uv.y = std::abs(uv.y - (float)(int32_t)(uv.y));
+
+      uint32_t x = uv.x * mip->width;
+      uint32_t y = (1 - uv.y) * mip->height;
 
       // std::cout << x << "," << y << std::endl;
 
