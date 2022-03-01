@@ -125,6 +125,7 @@ void draw(int mode, int first, int count, int dataType, const void *indices) {
    * 1. 执行vertex shader
    * 2. 收集varying gl_Position
    */
+#pragma omp parallel for
   for (int ii = 0; ii < count; ii++) {
     int i = ii;
     if (dataType == GL_UNSIGNED_SHORT)
@@ -207,6 +208,7 @@ void draw(int mode, int first, int count, int dataType, const void *indices) {
   auto viewportMatrix = getViewportMatrix(viewport);
 
   if (mode == GL_TRIANGLES) {
+#pragma omp parallel for
     for (int vertexIndex = 0; vertexIndex < count; vertexIndex += 3) {
       triangle triangleClip{clipSpaceVertices[vertexIndex],
                             clipSpaceVertices[vertexIndex + 1],
@@ -235,13 +237,13 @@ void draw(int mode, int first, int count, int dataType, const void *indices) {
        * @brief 寻找三角形bounding box
        */
       box2 boundingBox = triangleProjDiv.viewportBoundingBox(viewport);
-      // box2 boundingBox = {{0, 0}, {(float)width, (float)height}};
-      // std::cout << boundingBox << std::endl;
-      // std::cout << "triangleClipVecZ:" << triangleClipVecZ << std::endl;
-      /**
-       * @brief 光栅化rasterization
-       */
-      // #pragma omp parallel for
+// box2 boundingBox = {{0, 0}, {(float)width, (float)height}};
+// std::cout << boundingBox << std::endl;
+// std::cout << "triangleClipVecZ:" << triangleClipVecZ << std::endl;
+/**
+ * @brief 光栅化rasterization
+ */
+#pragma omp parallel for
       for (int y = (int)boundingBox.min.y; y < (int)boundingBox.max.y; y++) {
         for (int x = (int)boundingBox.min.x; x < (int)boundingBox.max.x; x++) {
           int bufferIndex = x + y * width;

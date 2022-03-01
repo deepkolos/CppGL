@@ -29,7 +29,7 @@ inline void displayBuffers(bool wait = true) {
   Mat image = Mat::zeros(height, width, CV_8UC3);
   Mat imageZ = Mat::zeros(height, width, CV_8UC3);
 
-  // #pragma omp parallel for
+#pragma omp parallel for
   for (int x = 0; x < (int)width; x++)
     for (int y = 0; y < (int)height; y++) {
       int bufferIndex = x + y * width;
