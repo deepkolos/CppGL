@@ -39,5 +39,5 @@ target_link_libraries(draw-cubes RTTR::Core ${OpenCV_LIBS} CppGL)
 add_executable(draw-cube-on-cube examples/draw-cube-on-cube.cpp)
 target_link_libraries(draw-cube-on-cube RTTR::Core ${OpenCV_LIBS} CppGL)
 
-add_executable(gltf-cube examples/gltf-cube.cpp)
-target_link_libraries(gltf-cube RTTR::Core ${OpenCV_LIBS} CppGL)
+add_executable(draw-gltf examples/draw-gltf.cpp)
+target_link_libraries(draw-gltf RTTR::Core ${OpenCV_LIBS} CppGL)

@@ -85,6 +85,10 @@ struct vec4 {
   inline vec4 operator*(float f) { return {x * f, y * f, z * f, w * f}; }
   inline vec4 operator+(float f) { return {x + f, y + f, z + f, w + f}; }
   inline vec4 operator-(float f) { return {x - f, y - f, z - f, w - f}; }
+  inline vec4 &operator*=(float f) {
+    *this = {x * f, y * f, z * f, w * f};
+    return *this;
+  }
 };
 struct mat4;
 struct mat3 {
@@ -232,6 +236,21 @@ struct mat4 {
     mat4 rotate{vec4{1, 0, 0, 0}, vec4{0, c, s, 0}, vec4{0, -s, c, 0},
                 vec4{0, 0, 0, 1}};
     *this = *this * rotate;
+    return *this;
+  }
+  inline mat4 &zRotate(float angleInRadians) {
+    float c = std::cosf(angleInRadians);
+    float s = std::sinf(angleInRadians);
+
+    mat4 rotate{vec4{1, 0, 0, 0}, vec4{0, c, s, 0}, vec4{0, -s, c, 0},
+                vec4{0, 0, 0, 1}};
+    *this = *this * rotate;
+    return *this;
+  }
+  inline mat4 &scale(float x) {
+    col0 *= x;
+    col1 *= x;
+    col2 *= x;
     return *this;
   }
 
