@@ -23,6 +23,7 @@ cpp 实现部分 opengl api 以及 shader 模拟(依赖 C++反射提供额外信
 ## TODO
 
 - PBR
+- BlingPhong
 
 ## 流程
 
