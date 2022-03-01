@@ -182,10 +182,13 @@ void glTexImage2D(int location, int mipLevel, int internalFormat, int width,
                   const void *data);
 void glClear(int mask);
 void glUniform1i(int location, int value);
+void glUniform2fv(int location, int count, const void *data);
 void glUniform3fv(int location, int count, const void *data);
+void glUniform4fv(int location, int count, const void *data);
 void glUniformMatrix4fv(int location, int count, bool transpose,
                         const void *data);
-void glUniform4fv(int location, int count, const void *data);
+void glUniformMatrix3fv(int location, int count, bool transpose,
+                        const void *data);
 void glFramebufferTexture2D(int target, int attachment, int textarget,
                             Texture *texture, int level);
 void glFramebufferRenderbuffer(int target, int attachment,

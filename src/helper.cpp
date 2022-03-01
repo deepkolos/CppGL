@@ -86,7 +86,7 @@ void draw(int mode, int first, int count, int dataType, const void *indices) {
   uint8_t *const varyingLerpedMemU8 = (uint8_t *)malloc(varyingSizeSumU8);
 
   /**
-   * @brief 分配frameBuffer zBuffer
+   * @brief 初始化frameBuffer zBuffer
    */
   if (nullptr == fbo->COLOR_ATTACHMENT0.attachment &&
       fbo == GLOBAL::DEFAULT_FRAMEBUFFER) {

@@ -124,6 +124,27 @@ void glUniform1i(int location, int value) {
       });
 }
 
+void glUniform2fv(int location, int count, const void *data) {
+  Helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto var = vertexProp.get_value(*vertexShader);
+          auto varPtr = var.get_value<vec2 *>();
+          auto size = vertexProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+
+        if (fragmentProp.is_valid()) {
+          auto var = fragmentProp.get_value(*fragmentShader);
+          auto varPtr = var.get_value<vec2 *>();
+          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+      });
+}
+
 void glUniform3fv(int location, int count, const void *data) {
   Helper::setUniform(
       location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
@@ -139,6 +160,49 @@ void glUniform3fv(int location, int count, const void *data) {
         if (fragmentProp.is_valid()) {
           auto var = fragmentProp.get_value(*fragmentShader);
           auto varPtr = var.get_value<vec3 *>();
+          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+      });
+}
+
+void glUniform4fv(int location, int count, const void *data) {
+  Helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto var = vertexProp.get_value(*vertexShader);
+          auto varPtr = var.get_value<vec4 *>();
+          auto size = vertexProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+
+        if (fragmentProp.is_valid()) {
+          auto var = fragmentProp.get_value(*fragmentShader);
+          auto varPtr = var.get_value<vec4 *>();
+          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+      });
+}
+
+void glUniformMatrix3fv(int location, int count, bool transpose,
+                        const void *data) {
+  Helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto var = vertexProp.get_value(*vertexShader);
+          auto varPtr = var.get_value<mat3 *>();
+          auto size = vertexProp.get_metadata(1).get_value<size_t>();
+          memcpy(varPtr, data, size);
+        }
+
+        if (fragmentProp.is_valid()) {
+          auto var = fragmentProp.get_value(*fragmentShader);
+          auto varPtr = var.get_value<mat3 *>();
           auto size = fragmentProp.get_metadata(1).get_value<size_t>();
           memcpy(varPtr, data, size);
         }
@@ -161,27 +225,6 @@ void glUniformMatrix4fv(int location, int count, bool transpose,
         if (fragmentProp.is_valid()) {
           auto var = fragmentProp.get_value(*fragmentShader);
           auto varPtr = var.get_value<mat4 *>();
-          auto size = fragmentProp.get_metadata(1).get_value<size_t>();
-          memcpy(varPtr, data, size);
-        }
-      });
-}
-
-void glUniform4fv(int location, int count, const void *data) {
-  Helper::setUniform(
-      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
-                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
-                    rttr::type &, rttr::type &) {
-        if (vertexProp.is_valid()) {
-          auto var = vertexProp.get_value(*vertexShader);
-          auto varPtr = var.get_value<vec4 *>();
-          auto size = vertexProp.get_metadata(1).get_value<size_t>();
-          memcpy(varPtr, data, size);
-        }
-
-        if (fragmentProp.is_valid()) {
-          auto var = fragmentProp.get_value(*fragmentShader);
-          auto varPtr = var.get_value<vec4 *>();
           auto size = fragmentProp.get_metadata(1).get_value<size_t>();
           memcpy(varPtr, data, size);
         }
