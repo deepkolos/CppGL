@@ -34,17 +34,17 @@ glDrawElements 目前的实现支持 attribute 访问增加索引, 显式重复�
 
 0. 初始化(指针:fbo/vao/indicesPtr 分配 varying/clipSpaceVertices/FrameBuffer/RenderBuffer 内存)
 1. 循环 0 ~ count
-   1.0. 根据 indicesPtr 读取映射后的 indices
-   1.1. 设置 attribute
-   1.2. 执行 vertex shader
-   1.3. 收集 varying 和 gl_Position
+   1. 根据 indicesPtr 读取映射后的 indices
+   2. 设置 attribute
+   3. 执行 vertex shader
+   4. 收集 varying 和 gl_Position
 2. 判断 mode == GL_TRIANGLES
-   2.0. 读取 a b c 的 varying 和 gl_Position
-   2.1. 算出 screenspace triangle 的 boundingbox 遍历矩形(光栅化)
-   2.2.0. 重心插值 + 透视除法
-   2.2.1. 判断是否三角形内
-   2.2.2. 判断深度
-   2.2.3. 近远平面裁剪
-   2.2.4. 重心插值 varying 并设置
-   2.2.5. 执行 fragment shader
-   2.2.6. 判断 discard 根据格式写入 framebuffer/renderbuffer
+   1. 读取 a b c 的 varying 和 gl_Position
+   2. 算出 screenspace triangle 的 boundingbox 遍历矩形(光栅化)
+      1. 重心插值 + 透视除法
+      2. 判断是否三角形内
+      3. 判断深度
+      4. 近远平面裁剪
+      5. 重心插值 varying 并设置
+      6. 执行 fragment shader
+      7. 判断 discard 根据格式写入 framebuffer/renderbuffer
