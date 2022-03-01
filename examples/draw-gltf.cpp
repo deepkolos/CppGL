@@ -97,9 +97,12 @@ bool loadModel(tinygltf::Model &model, const char *filename);
 void dbgModel(tinygltf::Model &model);
 Program *initGLProgram();
 
-int main(void) {
+int main(int argc, char **argv) {
   // std::string filename = "../models/Cube/Cube.gltf";
   std::string filename = "../models/BoomBox/glTF/BoomBox.gltf";
+
+  if (argc > 1)
+    filename = argv[1];
 
   tinygltf::Model model;
   if (!loadModel(model, filename.c_str()))
@@ -133,6 +136,7 @@ int main(void) {
   mat4 modelWorldMatrix;
   // modelWorldMatrix.translate(0, 0, -4).xRotate(0.5).yRotate(0.5);
   modelWorldMatrix.translate(0, 0, -4).yRotate(M_PI_4 + M_PI_2).scale(160);
+  // TODO 计算模型合适的scale
 
   auto uploadTexture = [&](int textureIndex) -> Texture * {
     auto &texture = model.textures[textureIndex];
