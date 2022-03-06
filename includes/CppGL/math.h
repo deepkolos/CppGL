@@ -7,6 +7,8 @@
 namespace CppGL {
 
 struct vec2;
+struct vec3;
+struct vec4;
 inline float cross(vec2 a, vec2 b);
 inline float dot(vec2 a, vec2 b);
 
@@ -45,6 +47,7 @@ struct vec3 {
     };
   };
   inline vec3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z){};
+  vec3(vec4 v);
 
   inline vec3 operator/(vec3 v) { return {x / v.x, y / v.y, z / v.z}; }
   inline vec3 operator*(vec3 v) { return {x * v.x, y * v.y, z * v.z}; }
@@ -284,6 +287,8 @@ struct mat4 {
 inline mat3::mat3(mat4 m)
     : m0(m.m0), m1(m.m1), m2(m.m2), m3(m.m4), m4(m.m5), m5(m.m6), m6(m.m8),
       m7(m.m9), m8(m.m10){};
+
+inline vec3::vec3(vec4 v) : x(v.x), y(v.y), z(v.z) {}
 
 struct box2 {
   vec2 min{std::numeric_limits<float>::max(),

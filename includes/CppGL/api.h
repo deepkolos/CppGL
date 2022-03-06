@@ -182,6 +182,7 @@ void glTexImage2D(int location, int mipLevel, int internalFormat, int width,
                   const void *data);
 void glClear(int mask);
 void glUniform1i(int location, int value);
+void glUniform1f(int location, float value);
 void glUniform2fv(int location, int count, const void *data);
 void glUniform3fv(int location, int count, const void *data);
 void glUniform4fv(int location, int count, const void *data);

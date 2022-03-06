@@ -53,10 +53,10 @@
       "MIMode": "lldb"
     },
     {
-      "name": "gltf-cube",
+      "name": "draw-gltf",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/gltf-cube",
+      "program": "${workspaceFolder}/build/draw-gltf",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",

@@ -124,6 +124,23 @@ void glUniform1i(int location, int value) {
       });
 }
 
+void glUniform1f(int location, float value) {
+  Helper::setUniform(
+      location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,
+                    ShaderSource *vertexShader, ShaderSource *fragmentShader,
+                    rttr::type &, rttr::type &) {
+        if (vertexProp.is_valid()) {
+          auto ptr = vertexProp.get_value(*vertexShader).get_value<float *>();
+          *ptr = value;
+        }
+        if (fragmentProp.is_valid()) {
+          auto ptr =
+              fragmentProp.get_value(*fragmentShader).get_value<float *>();
+          *ptr = value;
+        }
+      });
+}
+
 void glUniform2fv(int location, int count, const void *data) {
   Helper::setUniform(
       location, [&](rttr::property &vertexProp, rttr::property &fragmentProp,

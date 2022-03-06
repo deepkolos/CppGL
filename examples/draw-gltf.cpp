@@ -31,12 +31,15 @@ static struct VertexShaderSource : ShaderSource {
 
   uniform mat4 projection;
   uniform mat4 modelView;
+  uniform mat4 modelToWorld;
 
   varying vec3 v_normal;
   varying vec2 v_texcoord;
+  varying vec3 v_position; // world space
 
   void main() {
     gl_Position = projection * modelView * position;
+    v_position = vec3(modelToWorld * position);
     v_normal = mat3(modelView) * normal;
     v_texcoord = texcoord;
 
@@ -50,19 +53,36 @@ static struct VertexShaderSource : ShaderSource {
 static struct FragmentShaderSource : ShaderSource {
   varying vec3 v_normal;
   varying vec2 v_texcoord;
+  varying vec3 v_position; // world space
 
   uniform sampler2D diffuse;
-  uniform vec3 lightDir;
+
+  uniform vec3 ambientLightColor;
+  uniform float ambientLightIntensity;
+
+  uniform vec3 directionalLightColor;
+  uniform float directionalLightIntensity;
+  uniform vec3 directionalLightDirection;
+
+  uniform vec3 pointLightColor;
+  uniform float pointLightIntensity;
+  uniform vec3 pointLightPosition;
 
   void main() {
     vec3 normal = normalize(v_normal);
-    float light = dot(normal, lightDir) * 0.5 + 0.5;
-    vec4 color = texture2D(diffuse, v_texcoord);
-    // gl_FragColor = vec4(color.rgb * light, color.a);
-    gl_FragColor = vec4(vec3(color.r, color.g, color.b) * light, color.a);
-    // gl_FragColor = color;
-    // std::cout << color << std::endl;
-    // gl_FragColor = vec4(1, 0, 0, 1);
+    vec4 baseColor = texture2D(diffuse, v_texcoord);
+    vec3 ambientColor = ambientLightColor * ambientLightIntensity;
+    vec3 directionalColor = directionalLightColor *
+                            dot(normal, directionalLightDirection) *
+                            directionalLightIntensity;
+    vec3 pointLightDirection = pointLightPosition - v_position;
+    vec3 pointColor = pointLightColor * dot(normal, pointLightDirection) *
+                      pointLightIntensity;
+    vec3 light = clamp(clamp(pointColor, 0, 1) + clamp(directionalColor, 0, 1) +
+                           ambientColor,
+                       0, 1);
+    // vec3 light = clamp(pointColor, 0, 1) + clamp(directionalColor, 0, 1);
+    gl_FragColor = vec4(vec3(baseColor) * light, baseColor.a);
   }
 
   RTTR_ENABLE(ShaderSource)
@@ -77,8 +97,10 @@ CPPGL_RTTR_REGISTRATION {
       .CPPGL_RTTR_PROP(texcoord, M::Attribute)
       .CPPGL_RTTR_PROP(projection, M::Uniform)
       .CPPGL_RTTR_PROP(modelView, M::Uniform)
+      .CPPGL_RTTR_PROP(modelToWorld, M::Uniform)
       .CPPGL_RTTR_PROP(v_normal, M::Varying)
       .CPPGL_RTTR_PROP(v_texcoord, M::Varying)
+      .CPPGL_RTTR_PROP(v_position, M::Varying)
       .method("main", &S::main);
 }
 
@@ -88,8 +110,16 @@ CPPGL_RTTR_REGISTRATION {
   registration::class_<S>("FragmentShaderSource")
       .CPPGL_RTTR_PROP(v_normal, M::Varying)
       .CPPGL_RTTR_PROP(v_texcoord, M::Varying)
+      .CPPGL_RTTR_PROP(v_position, M::Varying)
       .CPPGL_RTTR_PROP(diffuse, M::Uniform)
-      .CPPGL_RTTR_PROP(lightDir, M::Uniform)
+      .CPPGL_RTTR_PROP(ambientLightColor, M::Uniform)
+      .CPPGL_RTTR_PROP(ambientLightIntensity, M::Uniform)
+      .CPPGL_RTTR_PROP(directionalLightColor, M::Uniform)
+      .CPPGL_RTTR_PROP(directionalLightDirection, M::Uniform)
+      .CPPGL_RTTR_PROP(directionalLightIntensity, M::Uniform)
+      .CPPGL_RTTR_PROP(pointLightColor, M::Uniform)
+      .CPPGL_RTTR_PROP(pointLightIntensity, M::Uniform)
+      .CPPGL_RTTR_PROP(pointLightPosition, M::Uniform)
       .method("main", &S::main);
 }
 
@@ -97,9 +127,15 @@ bool loadModel(tinygltf::Model &model, const char *filename);
 void dbgModel(tinygltf::Model &model);
 Program *initGLProgram();
 
+// 0: cube 1:bloomBox
+#define DRAW_OBJECT 1
+
 int main(int argc, char **argv) {
-  // std::string filename = "../models/Cube/Cube.gltf";
+#if DRAW_OBJECT == 0
+  std::string filename = "../models/Cube/Cube.gltf";
+#else
   std::string filename = "../models/BoomBox/glTF/BoomBox.gltf";
+#endif
 
   if (argc > 1)
     filename = argv[1];
@@ -108,6 +144,15 @@ int main(int argc, char **argv) {
   if (!loadModel(model, filename.c_str()))
     return 1;
   // dbgModel(model);
+
+  vec3 ambientLightColor{1, 1, 1};
+  float ambientLightIntensity = 0.3;
+  vec3 directionalLightColor{1, 1, 1};
+  float directionalLightIntensity = 0.5;
+  vec3 directionalLightDirection{normalize(vec3{1, 5, 8})};
+  vec3 pointLightColor{1, 1, 1};
+  float pointLightIntensity = 0.5;
+  vec3 pointLightPosition{0, 0, -1.5}; // world space
 
   Program *glProgram = initGLProgram();
   std::unordered_map<int, Buffer *> glBufferCache;
@@ -119,11 +164,32 @@ int main(int argc, char **argv) {
 
   auto projectionLoc = glGetUniformLocation(glProgram, "projection");
   auto modelViewLoc = glGetUniformLocation(glProgram, "modelView");
+  auto modelToWorldLoc = glGetUniformLocation(glProgram, "modelToWorld");
   auto diffuseLoc = glGetUniformLocation(glProgram, "diffuse");
-  auto lightDirLoc = glGetUniformLocation(glProgram, "lightDir");
+  auto ambientLightColorLoc =
+      glGetUniformLocation(glProgram, "ambientLightColor");
+  auto ambientLightIntensityLoc =
+      glGetUniformLocation(glProgram, "ambientLightIntensity");
+  auto directionalLightColorLoc =
+      glGetUniformLocation(glProgram, "directionalLightColor");
+  auto directionalLightDirectionLoc =
+      glGetUniformLocation(glProgram, "directionalLightDirection");
+  auto directionalLightIntensityLoc =
+      glGetUniformLocation(glProgram, "directionalLightIntensity");
+  auto pointLightColorLoc = glGetUniformLocation(glProgram, "pointLightColor");
+  auto pointLightIntensityLoc =
+      glGetUniformLocation(glProgram, "pointLightIntensity");
+  auto pointLightPositionLoc =
+      glGetUniformLocation(glProgram, "pointLightPosition");
 
-  vec3 lightDirLocData = normalize(vec3{1, 5, 8});
-  glUniform3fv(lightDirLoc, 3, &lightDirLocData);
+  glUniform3fv(ambientLightColorLoc, 3, &ambientLightColor);
+  glUniform3fv(directionalLightColorLoc, 3, &directionalLightColor);
+  glUniform3fv(pointLightColorLoc, 3, &pointLightColor);
+  glUniform3fv(directionalLightDirectionLoc, 3, &directionalLightDirection);
+  glUniform3fv(pointLightPositionLoc, 3, &pointLightPosition);
+  glUniform1f(ambientLightIntensityLoc, ambientLightIntensity);
+  glUniform1f(directionalLightIntensityLoc, directionalLightIntensity);
+  glUniform1f(pointLightIntensityLoc, pointLightIntensity);
 
   mat4 projection = mat4::perspective(60 * M_PI / 180,  // fov
                                       (float)300 / 150, // aspect
@@ -134,8 +200,11 @@ int main(int argc, char **argv) {
 
   mat4 cameraWorldMatrixInvert;
   mat4 modelWorldMatrix;
-  // modelWorldMatrix.translate(0, 0, -4).xRotate(0.5).yRotate(0.5);
+#if DRAW_OBJECT == 0
+  modelWorldMatrix.translate(0, 0, -4).xRotate(0.5).yRotate(0.5);
+#else
   modelWorldMatrix.translate(0, 0, -4).yRotate(M_PI_4 + M_PI_2).scale(160);
+#endif
   // TODO 计算模型合适的scale
 
   auto uploadTexture = [&](int textureIndex) -> Texture * {
@@ -226,6 +295,7 @@ int main(int argc, char **argv) {
 
     mat4 modelView = cameraWorldMatrixInvert * meshWorldMatrix;
     glUniformMatrix4fv(modelViewLoc, 1, false, &modelView);
+    glUniformMatrix4fv(modelToWorldLoc, 1, false, &meshWorldMatrix);
 
     for (auto &primitive : mesh.primitives) {
       auto &indciesAccessor = model.accessors[primitive.indices];
