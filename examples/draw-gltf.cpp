@@ -68,20 +68,36 @@ static struct FragmentShaderSource : ShaderSource {
   uniform float pointLightIntensity;
   uniform vec3 pointLightPosition;
 
+  uniform vec3 cameraPosition; // world space
+
   void main() {
     vec3 normal = normalize(v_normal);
     vec4 baseColor = texture2D(diffuse, v_texcoord);
     vec3 ambientColor = ambientLightColor * ambientLightIntensity;
-    vec3 directionalColor = directionalLightColor *
-                            dot(normal, directionalLightDirection) *
-                            directionalLightIntensity;
+    vec3 directionalDiffuseColor =
+        directionalLightColor * max(dot(normal, directionalLightDirection), 0) *
+        directionalLightIntensity;
     vec3 pointLightDirection = pointLightPosition - v_position;
-    vec3 pointColor = pointLightColor * dot(normal, pointLightDirection) *
-                      pointLightIntensity;
-    vec3 light = clamp(clamp(pointColor, 0, 1) + clamp(directionalColor, 0, 1) +
-                           ambientColor,
-                       0, 1);
-    // vec3 light = clamp(pointColor, 0, 1) + clamp(directionalColor, 0, 1);
+    vec3 pointDiffuseColor = pointLightColor *
+                             max(dot(normal, pointLightDirection), 0) *
+                             pointLightIntensity;
+
+    // 还缺高光, 视角和出射角度接近时表现为高光, 只有平行光和点光源会出现高光
+    // 但是计算时候是使视角与入射光的半角与平面的法线对比,
+    // 然后接近程度使用一个指数来区分
+    vec3 viewDirection = normalize(cameraPosition - v_position);
+    vec3 directionalHalfAngle = normalize(directionalLightDirection + viewDirection);
+    vec3 pointHalfAngle = normalize(pointLightDirection + viewDirection);
+
+    float directionalSpecular =
+        pow(max(dot(viewDirection, directionalHalfAngle), 0), 128);
+    float pointSpecular = pow(max(dot(viewDirection, pointHalfAngle), 0), 128);
+    vec3 directionalSpecularColor = directionalLightColor * directionalSpecular * directionalLightIntensity;
+    vec3 pointSpecularColor = pointLightColor * pointSpecular * pointLightIntensity;
+
+    vec3 light = pointSpecularColor + directionalSpecularColor +
+                 pointDiffuseColor + directionalDiffuseColor + ambientColor;
+    // vec3 light = pointDiffuseColor + directionalDiffuseColor + ambientColor;
     gl_FragColor = vec4(vec3(baseColor) * light, baseColor.a);
   }
 
@@ -120,6 +136,7 @@ CPPGL_RTTR_REGISTRATION {
       .CPPGL_RTTR_PROP(pointLightColor, M::Uniform)
       .CPPGL_RTTR_PROP(pointLightIntensity, M::Uniform)
       .CPPGL_RTTR_PROP(pointLightPosition, M::Uniform)
+      .CPPGL_RTTR_PROP(cameraPosition, M::Uniform)
       .method("main", &S::main);
 }
 
@@ -128,7 +145,7 @@ void dbgModel(tinygltf::Model &model);
 Program *initGLProgram();
 
 // 0: cube 1:bloomBox
-#define DRAW_OBJECT 1
+#define DRAW_OBJECT 0
 
 int main(int argc, char **argv) {
 #if DRAW_OBJECT == 0
@@ -148,11 +165,12 @@ int main(int argc, char **argv) {
   vec3 ambientLightColor{1, 1, 1};
   float ambientLightIntensity = 0.3;
   vec3 directionalLightColor{1, 1, 1};
-  float directionalLightIntensity = 0.5;
+  float directionalLightIntensity = 0.3;
   vec3 directionalLightDirection{normalize(vec3{1, 5, 8})};
   vec3 pointLightColor{1, 1, 1};
-  float pointLightIntensity = 0.5;
+  float pointLightIntensity = 0.3;
   vec3 pointLightPosition{0, 0, -1.5}; // world space
+  vec3 cameraPosition{0, 0, 0};        // world space
 
   Program *glProgram = initGLProgram();
   std::unordered_map<int, Buffer *> glBufferCache;
@@ -166,6 +184,7 @@ int main(int argc, char **argv) {
   auto modelViewLoc = glGetUniformLocation(glProgram, "modelView");
   auto modelToWorldLoc = glGetUniformLocation(glProgram, "modelToWorld");
   auto diffuseLoc = glGetUniformLocation(glProgram, "diffuse");
+  auto cameraPositionLoc = glGetUniformLocation(glProgram, "diffuse");
   auto ambientLightColorLoc =
       glGetUniformLocation(glProgram, "ambientLightColor");
   auto ambientLightIntensityLoc =
@@ -187,6 +206,7 @@ int main(int argc, char **argv) {
   glUniform3fv(pointLightColorLoc, 3, &pointLightColor);
   glUniform3fv(directionalLightDirectionLoc, 3, &directionalLightDirection);
   glUniform3fv(pointLightPositionLoc, 3, &pointLightPosition);
+  glUniform3fv(cameraPositionLoc, 3, &cameraPosition);
   glUniform1f(ambientLightIntensityLoc, ambientLightIntensity);
   glUniform1f(directionalLightIntensityLoc, directionalLightIntensity);
   glUniform1f(pointLightIntensityLoc, pointLightIntensity);

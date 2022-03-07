@@ -298,7 +298,7 @@ void draw(int mode, int first, int count, int dataType, const void *indices) {
           if (fragmentShader->_discarded)
             continue;
 
-          auto &color = fragmentShader->gl_FragColor;
+          auto color = clamp(fragmentShader->gl_FragColor, 0, 1);
 
           // 更新zBuffer frameBuffer
           zBuffer[bufferIndex] = positionDepth;

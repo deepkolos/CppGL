@@ -33,6 +33,9 @@ struct ShaderSource {
   vec4 gl_Position;
   vec4 gl_FragColor;
   bool _discarded = false;
+  inline void DISCARD() { _discarded = true; }
+  static vec4 texture2D(sample2D textureUint, vec2 uv);
+
   inline static vec2 normalize(vec2 v) {
     return v / std::sqrtf(v.x * v.x + v.y * v.y);
   };
@@ -45,8 +48,11 @@ struct ShaderSource {
   inline static float dot(vec3 a, vec3 b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
   };
-  inline void DISCARD() { _discarded = true; }
-  static vec4 texture2D(sample2D textureUint, vec2 uv);
+  inline static float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
+  inline static float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }
+  inline static float pow(float f, float a) { return std::powf(f, a); }
+  inline static float max(float a, float b) { return std::max(a, b); }
+
   RTTR_ENABLE()
 };
 
